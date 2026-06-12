@@ -10,8 +10,7 @@
 <div class="mx-auto flex min-h-[calc(100vh-4rem)] max-w-6xl flex-col gap-5">
   <header class="flex items-end justify-between gap-4">
     <div>
-      <p class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Experten-Tool</p>
-      <h1 class="mt-1 text-3xl font-semibold tracking-tight text-slate-950">{state.title}</h1>
+      <h1 class="text-3xl font-semibold tracking-tight text-slate-950">{state.title}</h1>
     </div>
 
     <button class="button-secondary" type="button" onclick={wizard.reset}>

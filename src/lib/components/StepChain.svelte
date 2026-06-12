@@ -63,18 +63,7 @@
             {index + 1}
           </span>
 
-          <span class="min-w-0">
-            <span class="block text-sm font-medium text-slate-900">{step.title}</span>
-            <span class="mt-0.5 block text-xs text-slate-500">
-              {#if step.touched && !step.validation.valid}
-                Fehler
-              {:else if step.touched && step.validation.valid}
-                Gültig
-              {:else}
-                Offen
-              {/if}
-            </span>
-          </span>
+          <span class="block min-w-0 text-sm font-medium text-slate-900">{step.title}</span>
         </button>
       </li>
     {/each}
