@@ -35,20 +35,20 @@
   }
 </script>
 
-<nav aria-label="Wizard-Schritte">
-  <ol class="grid grid-cols-1 gap-3 md:grid-cols-4 md:gap-0">
+<nav class="overflow-hidden" aria-label="Wizard-Schritte">
+  <ol class="-mx-1 flex snap-x items-stretch overflow-x-auto px-1 pb-1 md:mx-0 md:grid md:grid-cols-4 md:overflow-visible md:px-0 md:pb-0">
     {#each $wizard.steps as step, index}
-      <li class="relative flex items-center md:flex-col md:items-stretch">
+      <li class="relative flex min-w-[5.75rem] flex-1 snap-center justify-center md:min-w-0">
         {#if index > 0}
-          <div class={`hidden h-0.5 md:absolute md:left-0 md:right-1/2 md:top-5 md:block ${connectorClass($wizard.steps[index - 1])}`}></div>
+          <div class={`absolute left-0 right-1/2 top-5 h-0.5 ${connectorClass($wizard.steps[index - 1])}`}></div>
         {/if}
 
         {#if index < $wizard.steps.length - 1}
-          <div class={`hidden h-0.5 md:absolute md:left-1/2 md:right-0 md:top-5 md:block ${connectorClass(step)}`}></div>
+          <div class={`absolute left-1/2 right-0 top-5 h-0.5 ${connectorClass(step)}`}></div>
         {/if}
 
         <button
-          class="relative z-10 flex items-center gap-3 text-left md:flex-col md:text-center"
+          class="relative z-10 flex w-full flex-col items-center gap-2 rounded-lg px-2 py-1.5 text-center transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/20"
           type="button"
           aria-current={index === $wizard.currentStepIndex ? 'step' : undefined}
           onclick={() => wizard.goTo(index)}
@@ -63,7 +63,9 @@
             {index + 1}
           </span>
 
-          <span class="block min-w-0 text-sm font-medium text-slate-900">{step.title}</span>
+          <span class="block max-w-20 text-xs font-medium leading-tight text-slate-900 md:max-w-none md:text-sm">
+            {step.title}
+          </span>
         </button>
       </li>
     {/each}
