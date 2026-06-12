@@ -40,15 +40,15 @@
     {#each $wizard.steps as step, index}
       <li class="relative flex min-w-[5.75rem] flex-1 snap-center justify-center md:min-w-0">
         {#if index > 0}
-          <div class={`absolute left-0 right-1/2 top-5 h-0.5 ${connectorClass($wizard.steps[index - 1])}`}></div>
+          <div class={`absolute left-0 right-1/2 top-[1.625rem] h-0.5 ${connectorClass($wizard.steps[index - 1])}`}></div>
         {/if}
 
         {#if index < $wizard.steps.length - 1}
-          <div class={`absolute left-1/2 right-0 top-5 h-0.5 ${connectorClass(step)}`}></div>
+          <div class={`absolute left-1/2 right-0 top-[1.625rem] h-0.5 ${connectorClass(step)}`}></div>
         {/if}
 
         <button
-          class="relative z-10 flex w-full flex-col items-center gap-2 rounded-lg px-2 py-1.5 text-center transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/20"
+          class="relative z-10 flex w-full flex-col items-center gap-2 rounded-lg px-2 py-1.5 text-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/20"
           type="button"
           aria-current={index === $wizard.currentStepIndex ? 'step' : undefined}
           onclick={() => wizard.goTo(index)}
