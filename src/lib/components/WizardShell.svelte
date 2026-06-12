@@ -7,7 +7,7 @@
   $: currentStep = state.steps[state.currentStepIndex];
 </script>
 
-<div class="mx-auto flex min-h-[calc(100vh-4rem)] max-w-6xl flex-col gap-5">
+<div class={`mx-auto flex min-h-[calc(100vh-4rem)] max-w-6xl flex-col gap-5 ${state.submitted ? '' : 'pb-36 md:pb-28'}`}>
   <header class="flex items-end justify-between gap-4">
     <div>
       <h1 class="text-3xl font-semibold tracking-tight text-slate-950">{state.title}</h1>
