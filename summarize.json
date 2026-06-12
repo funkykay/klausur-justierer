@@ -1,0 +1,10 @@
+{
+  "selection_mode": "include_all",
+  "include": [],
+  "exclude": [],
+  "prune": [
+    "node_modules/",
+    ".git/",
+    "package-lock.json"
+  ]
+}
