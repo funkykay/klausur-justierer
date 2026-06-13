@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tick } from 'svelte';
   import {
     createWizardSessionExport,
     createWizardSessionFilename,
@@ -20,6 +21,8 @@
   let sessions: StoredWizardSession[] = [];
   let fileError = '';
   let fileInput: HTMLInputElement | null = null;
+  let sessionNameInput: HTMLInputElement | null = null;
+  let selectedSessionSelect: HTMLSelectElement | null = null;
   let importMenuElement: HTMLDivElement | null = null;
   let exportMenuElement: HTMLDivElement | null = null;
 
@@ -79,18 +82,22 @@
     closeMenus();
   }
 
-  function openSaveModal(): void {
+  async function openSaveModal(): Promise<void> {
     closeMenus();
     refreshSessions();
     sessionName = createDefaultSessionName();
     activeModal = 'save';
+    await tick();
+    sessionNameInput?.focus();
   }
 
-  function openLoadModal(): void {
+  async function openLoadModal(): Promise<void> {
     closeMenus();
     refreshSessions();
     selectedSessionName = sessions[0]?.name ?? '';
     activeModal = 'load';
+    await tick();
+    selectedSessionSelect?.focus();
   }
 
   function saveSession(): void {
@@ -285,35 +292,38 @@
     role="presentation"
     onclick={closeModalOnBackdrop}
   >
-    <form
+    <div
       class="w-full max-w-md rounded-lg border border-slate-200 bg-white p-5 shadow-xl"
       role="dialog"
       aria-modal="true"
       aria-labelledby="save-session-title"
-      onsubmit={(event) => {
-        event.preventDefault();
-        saveSession();
-      }}
     >
-      <h2 id="save-session-title" class="text-lg font-semibold text-slate-950">Session speichern</h2>
-      <p class="mt-2 text-sm text-slate-600">Gib einen Namen an, unter dem die aktuelle Session gespeichert wird.</p>
+      <form
+        onsubmit={(event) => {
+          event.preventDefault();
+          saveSession();
+        }}
+      >
+        <h2 id="save-session-title" class="text-lg font-semibold text-slate-950">Session speichern</h2>
+        <p class="mt-2 text-sm text-slate-600">Gib einen Namen an, unter dem die aktuelle Session gespeichert wird.</p>
 
-      <label class="mt-5 block">
-        <span class="field-label">Session-Name</span>
-        <input class="field-input" type="text" bind:value={sessionName} list="saved-session-names" autofocus />
-      </label>
+        <label class="mt-5 block">
+          <span class="field-label">Session-Name</span>
+          <input class="field-input" type="text" bind:value={sessionName} bind:this={sessionNameInput} list="saved-session-names" />
+        </label>
 
-      <datalist id="saved-session-names">
-        {#each sessions as session}
-          <option value={session.name}>{session.name}</option>
-        {/each}
-      </datalist>
+        <datalist id="saved-session-names">
+          {#each sessions as session}
+            <option value={session.name}>{session.name}</option>
+          {/each}
+        </datalist>
 
-      <div class="mt-6 flex justify-end gap-2">
-        <button class="button-secondary" type="button" onclick={closeModal}>Abbrechen</button>
-        <button class="button-primary" type="submit" disabled={!canSave}>Speichern</button>
-      </div>
-    </form>
+        <div class="mt-6 flex justify-end gap-2">
+          <button class="button-secondary" type="button" onclick={closeModal}>Abbrechen</button>
+          <button class="button-primary" type="submit" disabled={!canSave}>Speichern</button>
+        </div>
+      </form>
+    </div>
   </div>
 {/if}
 
@@ -323,38 +333,41 @@
     role="presentation"
     onclick={closeModalOnBackdrop}
   >
-    <form
+    <div
       class="w-full max-w-md rounded-lg border border-slate-200 bg-white p-5 shadow-xl"
       role="dialog"
       aria-modal="true"
       aria-labelledby="load-session-title"
-      onsubmit={(event) => {
-        event.preventDefault();
-        loadSession();
-      }}
     >
-      <h2 id="load-session-title" class="text-lg font-semibold text-slate-950">Session laden</h2>
+      <form
+        onsubmit={(event) => {
+          event.preventDefault();
+          loadSession();
+        }}
+      >
+        <h2 id="load-session-title" class="text-lg font-semibold text-slate-950">Session laden</h2>
 
-      {#if sessions.length}
-        <label class="mt-5 block">
-          <span class="field-label">Gespeicherte Session</span>
-          <select class="field-input" bind:value={selectedSessionName} autofocus>
-            {#each sessions as session}
-              <option value={session.name}>{session.name} · {formatSavedAt(session.savedAt)}</option>
-            {/each}
-          </select>
-        </label>
-      {:else}
-        <p class="mt-4 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
-          Es sind noch keine Sessions gespeichert.
-        </p>
-      {/if}
+        {#if sessions.length}
+          <label class="mt-5 block">
+            <span class="field-label">Gespeicherte Session</span>
+            <select class="field-input" bind:value={selectedSessionName} bind:this={selectedSessionSelect}>
+              {#each sessions as session}
+                <option value={session.name}>{session.name} · {formatSavedAt(session.savedAt)}</option>
+              {/each}
+            </select>
+          </label>
+        {:else}
+          <p class="mt-4 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+            Es sind noch keine Sessions gespeichert.
+          </p>
+        {/if}
 
-      <div class="mt-6 flex justify-end gap-2">
-        <button class="button-secondary" type="button" onclick={closeModal}>Abbrechen</button>
-        <button class="button-primary" type="submit" disabled={!canLoad}>Laden</button>
-      </div>
-    </form>
+        <div class="mt-6 flex justify-end gap-2">
+          <button class="button-secondary" type="button" onclick={closeModal}>Abbrechen</button>
+          <button class="button-primary" type="submit" disabled={!canLoad}>Laden</button>
+        </div>
+      </form>
+    </div>
   </div>
 {/if}
 
