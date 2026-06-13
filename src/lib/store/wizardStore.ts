@@ -8,6 +8,14 @@ function createInitialData(): WizardData {
       topic: '',
       course: ''
     },
+    aufgaben: {
+      tasks: [
+        {
+          name: 'Aufgabe 1',
+          maxPoints: 0
+        }
+      ]
+    },
     notenschema: {
       passingPoints: null,
       gradeThresholds: [
@@ -77,6 +85,7 @@ function createInitialState(): WizardState {
       valid: true,
       errorsByStep: {
         basis: {},
+        aufgaben: {},
         notenschema: {},
         justierung: {},
         abschluss: {}

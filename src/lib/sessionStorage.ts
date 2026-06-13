@@ -1,7 +1,7 @@
-import type { GradeThreshold, StepId, WizardData, WizardSessionSnapshot, WizardState } from './types';
+import type { ExamTask, GradeThreshold, StepId, WizardData, WizardSessionSnapshot, WizardState } from './types';
 
 const STORAGE_KEY = 'klasur-justierer:sessions';
-const STEP_IDS: StepId[] = ['basis', 'notenschema', 'justierung', 'abschluss'];
+const STEP_IDS: StepId[] = ['basis', 'aufgaben', 'notenschema', 'justierung', 'abschluss'];
 
 export type StoredWizardSession = {
   name: string;
@@ -13,7 +13,7 @@ export type StoredWizardSession = {
 
 export type WizardSessionExport = {
   format: 'klasur-justierer-session';
-  version: 3;
+  version: 4;
   exportedAt: string;
   data: WizardData;
   touchedStepIds: StepId[];
@@ -36,9 +36,24 @@ function isStepId(value: unknown): value is StepId {
   return typeof value === 'string' && STEP_IDS.includes(value as StepId);
 }
 
+function createDefaultAufgabenData(): WizardData['aufgaben'] {
+  return {
+    tasks: [
+      {
+        name: 'Aufgabe 1',
+        maxPoints: 0
+      }
+    ]
+  };
+}
+
 function hasWizardStepData(stepId: StepId, data: WizardData): boolean {
   if (stepId === 'basis') {
     return data.basis.topic.trim().length > 0 || data.basis.course.trim().length > 0;
+  }
+
+  if (stepId === 'aufgaben') {
+    return data.aufgaben.tasks.some((task) => task.name.trim().length > 0 || task.maxPoints !== null);
   }
 
   if (stepId === 'notenschema') {
@@ -99,6 +114,45 @@ function readBasisData(value: unknown): WizardData['basis'] | null {
   }
 
   return null;
+}
+
+function readTasks(value: unknown): ExamTask[] | null {
+  if (!Array.isArray(value)) {
+    return null;
+  }
+
+  const validTasks = value.every(
+    (task) => isRecord(task) && typeof task.name === 'string' && isNumberOrNull(task.maxPoints)
+  );
+
+  if (!validTasks) {
+    return null;
+  }
+
+  return value.map((task) => ({
+    name: task.name as string,
+    maxPoints: task.maxPoints as number | null
+  }));
+}
+
+function readAufgabenData(value: unknown): WizardData['aufgaben'] | null {
+  if (value === undefined) {
+    return createDefaultAufgabenData();
+  }
+
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  const tasks = readTasks(value.tasks);
+
+  if (!tasks) {
+    return null;
+  }
+
+  return {
+    tasks
+  };
 }
 
 function readGradeThresholds(value: unknown): GradeThreshold[] | null {
@@ -176,16 +230,18 @@ function readWizardData(value: unknown): WizardData | null {
   }
 
   const basis = readBasisData(value.basis);
+  const aufgaben = readAufgabenData(value.aufgaben);
   const notenschema = readNotenschemaData(value.notenschema);
   const justierung = readJustierungData(value.justierung);
   const abschluss = readAbschlussData(value.abschluss);
 
-  if (!basis || !notenschema || !justierung || !abschluss) {
+  if (!basis || !aufgaben || !notenschema || !justierung || !abschluss) {
     return null;
   }
 
   return {
     basis,
+    aufgaben,
     notenschema,
     justierung,
     abschluss
@@ -244,6 +300,11 @@ function cloneWizardData(data: WizardData): WizardData {
   return {
     basis: {
       ...data.basis
+    },
+    aufgaben: {
+      tasks: data.aufgaben.tasks.map((task) => ({
+        ...task
+      }))
     },
     notenschema: {
       passingPoints: data.notenschema.passingPoints,
@@ -360,7 +421,7 @@ export function createWizardSessionExport(state: WizardState): WizardSessionExpo
 
   return {
     format: 'klasur-justierer-session',
-    version: 3,
+    version: 4,
     exportedAt: new Date().toISOString(),
     data: cloneWizardData(snapshot.data),
     touchedStepIds: [...snapshot.touchedStepIds],

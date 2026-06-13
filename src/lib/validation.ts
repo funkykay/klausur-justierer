@@ -38,6 +38,27 @@ function validateBasis(data: WizardData): ValidationResult {
   return createValidationResult(errors);
 }
 
+function validateAufgaben(data: WizardData): ValidationResult {
+  const errors: FieldErrors = {};
+  const { tasks } = data.aufgaben;
+
+  if (tasks.length === 0) {
+    addError(errors, 'tasks', 'Mindestens eine Aufgabe ist erforderlich.');
+  }
+
+  tasks.forEach((task, index) => {
+    if (isBlank(task.name)) {
+      addError(errors, `tasks.${index}.name`, 'Aufgabenname ist erforderlich.');
+    }
+
+    if (!hasNonNegativeNumber(task.maxPoints)) {
+      addError(errors, `tasks.${index}.maxPoints`, 'Punkte müssen mindestens 0 sein.');
+    }
+  });
+
+  return createValidationResult(errors);
+}
+
 function validateNotenschema(data: WizardData): ValidationResult {
   const errors: FieldErrors = {};
   const { passingPoints, gradeThresholds } = data.notenschema;
@@ -103,4 +124,4 @@ function validateAbschluss(data: WizardData): ValidationResult {
   return createValidationResult(errors);
 }
 
-export { validateAbschluss, validateBasis, validateJustierung, validateNotenschema };
+export { validateAbschluss, validateAufgaben, validateBasis, validateJustierung, validateNotenschema };

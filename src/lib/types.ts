@@ -1,12 +1,17 @@
 import type { Component } from 'svelte';
 
-export type StepId = 'basis' | 'notenschema' | 'justierung' | 'abschluss';
+export type StepId = 'basis' | 'aufgaben' | 'notenschema' | 'justierung' | 'abschluss';
 
 export type FieldErrors = Record<string, string[]>;
 
 export type ValidationResult = {
   valid: boolean;
   errors: FieldErrors;
+};
+
+export type ExamTask = {
+  name: string;
+  maxPoints: number | null;
 };
 
 export type GradeThreshold = {
@@ -18,6 +23,9 @@ export type WizardData = {
   basis: {
     topic: string;
     course: string;
+  };
+  aufgaben: {
+    tasks: ExamTask[];
   };
   notenschema: {
     passingPoints: number | null;
