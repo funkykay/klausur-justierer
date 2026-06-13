@@ -1,5 +1,6 @@
 <script lang="ts">
   import { wizard } from '../store/wizardStore';
+  import SessionActions from './SessionActions.svelte';
   import StepChain from './StepChain.svelte';
   import WizardNavigation from './WizardNavigation.svelte';
 
@@ -13,9 +14,7 @@
       <h1 class="text-3xl font-semibold tracking-tight text-slate-950">{state.title}</h1>
     </div>
 
-    <button class="button-secondary" type="button" onclick={wizard.reset}>
-      Zurücksetzen
-    </button>
+    <SessionActions />
   </header>
 
   <section class="panel p-5">

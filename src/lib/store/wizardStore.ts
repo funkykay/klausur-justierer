@@ -2,34 +2,36 @@ import { writable } from 'svelte/store';
 import { createSteps } from '../steps';
 import type { StepId, WizardData, WizardState, WizardStep, WizardValidationState } from '../types';
 
-const initialData: WizardData = {
-  basis: {
-    title: '',
-    course: '',
-    examDate: '',
-    maxPoints: null,
-    participantCount: null
-  },
-  notenschema: {
-    passingPoints: null,
-    gradeThresholds: [
-      { grade: '1,0', minPoints: null },
-      { grade: '2,0', minPoints: null },
-      { grade: '3,0', minPoints: null },
-      { grade: '4,0', minPoints: null }
-    ]
-  },
-  justierung: {
-    method: 'none',
-    bonusPoints: null,
-    capAtMaxPoints: true,
-    reviewer: '',
-    reason: ''
-  },
-  abschluss: {
-    confirmed: false
-  }
-};
+function createInitialData(): WizardData {
+  return {
+    basis: {
+      title: '',
+      course: '',
+      examDate: '',
+      maxPoints: null,
+      participantCount: null
+    },
+    notenschema: {
+      passingPoints: null,
+      gradeThresholds: [
+        { grade: '1,0', minPoints: null },
+        { grade: '2,0', minPoints: null },
+        { grade: '3,0', minPoints: null },
+        { grade: '4,0', minPoints: null }
+      ]
+    },
+    justierung: {
+      method: 'none',
+      bonusPoints: null,
+      capAtMaxPoints: true,
+      reviewer: '',
+      reason: ''
+    },
+    abschluss: {
+      confirmed: false
+    }
+  };
+}
 
 function buildValidation(steps: WizardStep[]): WizardValidationState {
   const errorsByStep = steps.reduce(
@@ -62,7 +64,7 @@ function validateState(state: WizardState): WizardState {
 function createInitialState(): WizardState {
   return validateState({
     title: 'Klasur-Justierer',
-    data: initialData,
+    data: createInitialData(),
     steps: createSteps(),
     currentStepIndex: 0,
     validation: {
@@ -99,6 +101,16 @@ function createWizardStore() {
         validateState({
           ...state,
           data: updater(state.data),
+          submitted: false
+        })
+      );
+    },
+
+    replaceData(data: WizardData) {
+      store.set(
+        validateState({
+          ...createInitialState(),
+          data,
           submitted: false
         })
       );
