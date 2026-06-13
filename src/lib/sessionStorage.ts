@@ -1,7 +1,15 @@
-import type { ExamTask, GradeThreshold, StepId, WizardData, WizardSessionSnapshot, WizardState } from './types';
+import type {
+  ExamParticipant,
+  ExamTask,
+  GradeThreshold,
+  StepId,
+  WizardData,
+  WizardSessionSnapshot,
+  WizardState
+} from './types';
 
 const STORAGE_KEY = 'klasur-justierer:sessions';
-const STEP_IDS: StepId[] = ['basis', 'aufgaben', 'notenschema', 'justierung'];
+const STEP_IDS: StepId[] = ['basis', 'aufgaben', 'notenschema', 'teilnehmer', 'justierung'];
 
 export type StoredWizardSession = {
   name: string;
@@ -13,7 +21,7 @@ export type StoredWizardSession = {
 
 export type WizardSessionExport = {
   format: 'klasur-justierer-session';
-  version: 6;
+  version: 7;
   exportedAt: string;
   data: WizardData;
   touchedStepIds: StepId[];
@@ -47,6 +55,17 @@ function createDefaultAufgabenData(): WizardData['aufgaben'] {
   };
 }
 
+function createDefaultTeilnehmerData(taskCount: number): WizardData['teilnehmer'] {
+  return {
+    participants: [
+      {
+        name: 'Teilnehmer 1',
+        pointsByTask: Array.from({ length: taskCount }, () => 0)
+      }
+    ]
+  };
+}
+
 function hasWizardStepData(stepId: StepId, data: WizardData): boolean {
   if (stepId === 'basis') {
     return data.basis.topic.trim().length > 0 || data.basis.course.trim().length > 0;
@@ -59,6 +78,13 @@ function hasWizardStepData(stepId: StepId, data: WizardData): boolean {
   if (stepId === 'notenschema') {
     return data.notenschema.gradeThresholds.some(
       (threshold) => threshold.grade.trim().length > 0 || threshold.minPercent !== null
+    );
+  }
+
+  if (stepId === 'teilnehmer') {
+    return data.teilnehmer.participants.some(
+      (participant) =>
+        participant.name.trim().length > 0 || participant.pointsByTask.some((points) => points !== null)
     );
   }
 
@@ -229,6 +255,69 @@ function readNotenschemaData(value: unknown, totalPoints: number): WizardData['n
   };
 }
 
+function normalizeParticipantPoints(pointsByTask: (number | null)[], taskCount: number): (number | null)[] {
+  return Array.from({ length: taskCount }, (_, index) => pointsByTask[index] ?? 0);
+}
+
+function readParticipantPoints(value: unknown): (number | null)[] | null {
+  if (!Array.isArray(value)) {
+    return null;
+  }
+
+  if (!value.every(isNumberOrNull)) {
+    return null;
+  }
+
+  return value;
+}
+
+function readParticipants(value: unknown, taskCount: number): ExamParticipant[] | null {
+  if (!Array.isArray(value)) {
+    return null;
+  }
+
+  const participants: ExamParticipant[] = [];
+
+  for (const participant of value) {
+    if (!isRecord(participant) || typeof participant.name !== 'string') {
+      return null;
+    }
+
+    const pointsByTask = readParticipantPoints(participant.pointsByTask);
+
+    if (!pointsByTask) {
+      return null;
+    }
+
+    participants.push({
+      name: participant.name,
+      pointsByTask: normalizeParticipantPoints(pointsByTask, taskCount)
+    });
+  }
+
+  return participants.length > 0 ? participants : createDefaultTeilnehmerData(taskCount).participants;
+}
+
+function readTeilnehmerData(value: unknown, taskCount: number): WizardData['teilnehmer'] | null {
+  if (value === undefined) {
+    return createDefaultTeilnehmerData(taskCount);
+  }
+
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  const participants = readParticipants(value.participants, taskCount);
+
+  if (!participants) {
+    return null;
+  }
+
+  return {
+    participants
+  };
+}
+
 function readJustierungData(value: unknown): WizardData['justierung'] | null {
   if (!isRecord(value)) {
     return null;
@@ -265,9 +354,10 @@ function readWizardData(value: unknown): WizardData | null {
 
   const totalPoints = calculateTotalPoints(aufgaben.tasks);
   const notenschema = readNotenschemaData(value.notenschema, totalPoints);
+  const teilnehmer = readTeilnehmerData(value.teilnehmer, aufgaben.tasks.length);
   const justierung = readJustierungData(value.justierung);
 
-  if (!notenschema || !justierung) {
+  if (!notenschema || !teilnehmer || !justierung) {
     return null;
   }
 
@@ -275,6 +365,7 @@ function readWizardData(value: unknown): WizardData | null {
     basis,
     aufgaben,
     notenschema,
+    teilnehmer,
     justierung
   };
 }
@@ -340,6 +431,12 @@ function cloneWizardData(data: WizardData): WizardData {
     notenschema: {
       gradeThresholds: data.notenschema.gradeThresholds.map((threshold) => ({
         ...threshold
+      }))
+    },
+    teilnehmer: {
+      participants: data.teilnehmer.participants.map((participant) => ({
+        name: participant.name,
+        pointsByTask: [...participant.pointsByTask]
       }))
     },
     justierung: {
@@ -448,7 +545,7 @@ export function createWizardSessionExport(state: WizardState): WizardSessionExpo
 
   return {
     format: 'klasur-justierer-session',
-    version: 6,
+    version: 7,
     exportedAt: new Date().toISOString(),
     data: cloneWizardData(snapshot.data),
     touchedStepIds: [...snapshot.touchedStepIds],

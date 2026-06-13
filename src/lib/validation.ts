@@ -101,6 +101,45 @@ function validateNotenschema(data: WizardData): ValidationResult {
   return createValidationResult(errors);
 }
 
+function validateTeilnehmer(data: WizardData): ValidationResult {
+  const errors: FieldErrors = {};
+  const { participants } = data.teilnehmer;
+  const { tasks } = data.aufgaben;
+
+  if (participants.length === 0) {
+    addError(errors, 'participants', 'Mindestens ein Teilnehmer ist erforderlich.');
+  }
+
+  participants.forEach((participant, participantIndex) => {
+    if (isBlank(participant.name)) {
+      addError(errors, `participants.${participantIndex}.name`, 'Name ist erforderlich.');
+    }
+
+    tasks.forEach((task, taskIndex) => {
+      const points = participant.pointsByTask[taskIndex] ?? null;
+
+      if (!hasNonNegativeNumber(points)) {
+        addError(
+          errors,
+          `participants.${participantIndex}.pointsByTask.${taskIndex}`,
+          'Punkte sind erforderlich und müssen mindestens 0 sein.'
+        );
+        return;
+      }
+
+      if (hasNonNegativeNumber(task.maxPoints) && points > task.maxPoints) {
+        addError(
+          errors,
+          `participants.${participantIndex}.pointsByTask.${taskIndex}`,
+          `Punkte dürfen höchstens ${task.maxPoints} sein.`
+        );
+      }
+    });
+  });
+
+  return createValidationResult(errors);
+}
+
 function validateJustierung(data: WizardData): ValidationResult {
   const errors: FieldErrors = {};
   const { justierung } = data;
@@ -120,4 +159,4 @@ function validateJustierung(data: WizardData): ValidationResult {
   return createValidationResult(errors);
 }
 
-export { validateAufgaben, validateBasis, validateJustierung, validateNotenschema };
+export { validateAufgaben, validateBasis, validateJustierung, validateNotenschema, validateTeilnehmer };

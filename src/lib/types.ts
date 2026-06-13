@@ -1,6 +1,6 @@
 import type { Component } from 'svelte';
 
-export type StepId = 'basis' | 'aufgaben' | 'notenschema' | 'justierung';
+export type StepId = 'basis' | 'aufgaben' | 'notenschema' | 'teilnehmer' | 'justierung';
 
 export type FieldErrors = Record<string, string[]>;
 
@@ -19,6 +19,11 @@ export type GradeThreshold = {
   minPercent: number | null;
 };
 
+export type ExamParticipant = {
+  name: string;
+  pointsByTask: (number | null)[];
+};
+
 export type WizardData = {
   basis: {
     topic: string;
@@ -29,6 +34,9 @@ export type WizardData = {
   };
   notenschema: {
     gradeThresholds: GradeThreshold[];
+  };
+  teilnehmer: {
+    participants: ExamParticipant[];
   };
   justierung: {
     method: 'none' | 'bonus' | 'linear';

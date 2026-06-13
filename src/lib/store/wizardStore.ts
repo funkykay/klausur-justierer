@@ -26,11 +26,44 @@ function createInitialData(): WizardData {
         { grade: '6', minPercent: 0 }
       ]
     },
+    teilnehmer: {
+      participants: [
+        {
+          name: 'Teilnehmer 1',
+          pointsByTask: [0]
+        }
+      ]
+    },
     justierung: {
       method: 'none',
       bonusPoints: null,
       reviewer: '',
       reason: ''
+    }
+  };
+}
+
+function createDefaultParticipant(index: number, taskCount: number) {
+  return {
+    name: `Teilnehmer ${index + 1}`,
+    pointsByTask: Array.from({ length: taskCount }, () => 0)
+  };
+}
+
+function normalizeData(data: WizardData): WizardData {
+  const taskCount = data.aufgaben.tasks.length;
+  const participants =
+    data.teilnehmer.participants.length > 0
+      ? data.teilnehmer.participants
+      : [createDefaultParticipant(0, taskCount)];
+
+  return {
+    ...data,
+    teilnehmer: {
+      participants: participants.map((participant) => ({
+        ...participant,
+        pointsByTask: Array.from({ length: taskCount }, (_, index) => participant.pointsByTask[index] ?? 0)
+      }))
     }
   };
 }
@@ -51,13 +84,15 @@ function buildValidation(steps: WizardStep[]): WizardValidationState {
 }
 
 function validateState(state: WizardState): WizardState {
+  const data = normalizeData(state.data);
   const steps = state.steps.map((step) => ({
     ...step,
-    validation: step.validate(state.data)
+    validation: step.validate(data)
   }));
 
   return {
     ...state,
+    data,
     steps,
     validation: buildValidation(steps)
   };
@@ -85,6 +120,7 @@ function createInitialState(): WizardState {
         basis: {},
         aufgaben: {},
         notenschema: {},
+        teilnehmer: {},
         justierung: {}
       }
     }

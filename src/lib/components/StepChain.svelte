@@ -36,7 +36,7 @@
 </script>
 
 <nav class="overflow-hidden" aria-label="Wizard-Schritte">
-  <ol class="-mx-1 flex snap-x items-stretch overflow-x-auto px-1 pb-1 md:mx-0 md:grid md:grid-cols-4 md:overflow-visible md:px-0 md:pb-0">
+  <ol class="-mx-1 flex snap-x items-stretch overflow-x-auto px-1 pb-1 md:mx-0 md:grid md:grid-cols-5 md:overflow-visible md:px-0 md:pb-0">
     {#each $wizard.steps as step, index}
       <li class="relative flex min-w-[5.75rem] flex-1 snap-center justify-center md:min-w-0">
         {#if index > 0}
