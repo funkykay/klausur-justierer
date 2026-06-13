@@ -38,6 +38,12 @@ export type WizardData = {
   };
 };
 
+export type WizardSessionSnapshot = {
+  data: WizardData;
+  touchedStepIds: StepId[];
+  currentStepId: StepId;
+};
+
 export type WizardStep = {
   id: StepId;
   title: string;

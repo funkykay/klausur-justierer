@@ -92,7 +92,7 @@
       return;
     }
 
-    saveWizardSession(sessionName, $wizard.data);
+    saveWizardSession(sessionName, $wizard);
     refreshSessions();
     closeModal();
   }
@@ -102,15 +102,15 @@
       return;
     }
 
-    const data = loadWizardSession(selectedSessionName);
+    const snapshot = loadWizardSession(selectedSessionName);
 
-    if (!data) {
+    if (!snapshot) {
       refreshSessions();
       selectedSessionName = sessions[0]?.name ?? '';
       return;
     }
 
-    wizard.replaceData(data);
+    wizard.replaceSession(snapshot);
     closeModal();
   }
 
@@ -129,9 +129,9 @@
 
     try {
       const content = await file.text();
-      const data = parseWizardSessionJson(content);
+      const snapshot = parseWizardSessionJson(content);
 
-      wizard.replaceData(data);
+      wizard.replaceSession(snapshot);
     } catch (error) {
       fileError = error instanceof Error ? error.message : 'Die Datei konnte nicht importiert werden.';
     } finally {
@@ -142,7 +142,7 @@
   function exportFile(): void {
     closeMenus();
 
-    const payload = createWizardSessionExport($wizard.data);
+    const payload = createWizardSessionExport($wizard);
     const blob = new Blob([JSON.stringify(payload, null, 2)], {
       type: 'application/json'
     });

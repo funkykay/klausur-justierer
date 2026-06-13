@@ -1,18 +1,23 @@
-import type { WizardData } from './types';
+import type { StepId, WizardData, WizardSessionSnapshot, WizardState } from './types';
 
 const STORAGE_KEY = 'klasur-justierer:sessions';
+const STEP_IDS: StepId[] = ['basis', 'notenschema', 'justierung', 'abschluss'];
 
 export type StoredWizardSession = {
   name: string;
   savedAt: string;
   data: WizardData;
+  touchedStepIds: StepId[];
+  currentStepId: StepId;
 };
 
 export type WizardSessionExport = {
   format: 'klasur-justierer-session';
-  version: 1;
+  version: 2;
   exportedAt: string;
   data: WizardData;
+  touchedStepIds: StepId[];
+  currentStepId: StepId;
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -25,6 +30,53 @@ function isNumberOrNull(value: unknown): value is number | null {
 
 function isMethod(value: unknown): value is WizardData['justierung']['method'] {
   return value === 'none' || value === 'bonus' || value === 'linear';
+}
+
+function isStepId(value: unknown): value is StepId {
+  return typeof value === 'string' && STEP_IDS.includes(value as StepId);
+}
+
+function hasWizardStepData(stepId: StepId, data: WizardData): boolean {
+  if (stepId === 'basis') {
+    return (
+      data.basis.title.trim().length > 0 ||
+      data.basis.course.trim().length > 0 ||
+      data.basis.examDate.trim().length > 0 ||
+      data.basis.maxPoints !== null ||
+      data.basis.participantCount !== null
+    );
+  }
+
+  if (stepId === 'notenschema') {
+    return (
+      data.notenschema.passingPoints !== null ||
+      data.notenschema.gradeThresholds.some((threshold) => threshold.minPoints !== null)
+    );
+  }
+
+  if (stepId === 'justierung') {
+    return (
+      data.justierung.method !== 'none' ||
+      data.justierung.bonusPoints !== null ||
+      data.justierung.capAtMaxPoints !== true ||
+      data.justierung.reviewer.trim().length > 0 ||
+      data.justierung.reason.trim().length > 0
+    );
+  }
+
+  return data.abschluss.confirmed;
+}
+
+function readTouchedStepIds(value: unknown, data: WizardData): StepId[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.filter(isStepId).filter((stepId) => hasWizardStepData(stepId, data));
+}
+
+function readCurrentStepId(value: unknown): StepId {
+  return isStepId(value) ? value : 'basis';
 }
 
 function isWizardData(value: unknown): value is WizardData {
@@ -86,13 +138,46 @@ function isWizardData(value: unknown): value is WizardData {
   return true;
 }
 
+function readWizardSessionSnapshot(value: unknown): WizardSessionSnapshot | null {
+  if (isWizardData(value)) {
+    return {
+      data: cloneWizardData(value),
+      touchedStepIds: [],
+      currentStepId: 'basis'
+    };
+  }
+
+  if (!isRecord(value) || !isWizardData(value.data)) {
+    return null;
+  }
+
+  const data = cloneWizardData(value.data);
+
+  return {
+    data,
+    touchedStepIds: readTouchedStepIds(value.touchedStepIds, data),
+    currentStepId: readCurrentStepId(value.currentStepId)
+  };
+}
+
 function isStoredWizardSession(value: unknown): value is StoredWizardSession {
-  return (
-    isRecord(value) &&
-    typeof value.name === 'string' &&
-    typeof value.savedAt === 'string' &&
-    isWizardData(value.data)
-  );
+  return isRecord(value) && typeof value.name === 'string' && typeof value.savedAt === 'string' && isWizardData(value.data);
+}
+
+function normalizeStoredWizardSession(value: unknown): StoredWizardSession | null {
+  if (!isStoredWizardSession(value)) {
+    return null;
+  }
+
+  const data = cloneWizardData(value.data);
+
+  return {
+    name: value.name,
+    savedAt: value.savedAt,
+    data,
+    touchedStepIds: readTouchedStepIds(value.touchedStepIds, data),
+    currentStepId: readCurrentStepId(value.currentStepId)
+  };
 }
 
 function cloneWizardData(data: WizardData): WizardData {
@@ -115,6 +200,24 @@ function cloneWizardData(data: WizardData): WizardData {
   };
 }
 
+function cloneWizardSessionSnapshot(snapshot: WizardSessionSnapshot): WizardSessionSnapshot {
+  return {
+    data: cloneWizardData(snapshot.data),
+    touchedStepIds: [...snapshot.touchedStepIds],
+    currentStepId: snapshot.currentStepId
+  };
+}
+
+function createWizardSessionSnapshot(state: WizardState): WizardSessionSnapshot {
+  return {
+    data: cloneWizardData(state.data),
+    touchedStepIds: state.steps
+      .filter((step) => step.touched && hasWizardStepData(step.id, state.data))
+      .map((step) => step.id),
+    currentStepId: state.steps[state.currentStepIndex]?.id ?? 'basis'
+  };
+}
+
 function readStoredSessions(): StoredWizardSession[] {
   if (typeof localStorage === 'undefined') {
     return [];
@@ -133,7 +236,10 @@ function readStoredSessions(): StoredWizardSession[] {
       return [];
     }
 
-    return parsed.filter(isStoredWizardSession).sort((left, right) => right.savedAt.localeCompare(left.savedAt));
+    return parsed
+      .map(normalizeStoredWizardSession)
+      .filter((session): session is StoredWizardSession => session !== null)
+      .sort((left, right) => right.savedAt.localeCompare(left.savedAt));
   } catch {
     return [];
   }
@@ -150,53 +256,64 @@ function writeStoredSessions(sessions: StoredWizardSession[]): void {
 export function listWizardSessions(): StoredWizardSession[] {
   return readStoredSessions().map((session) => ({
     ...session,
-    data: cloneWizardData(session.data)
+    data: cloneWizardData(session.data),
+    touchedStepIds: [...session.touchedStepIds]
   }));
 }
 
-export function saveWizardSession(name: string, data: WizardData): void {
+export function saveWizardSession(name: string, state: WizardState): void {
   const normalizedName = name.trim();
 
   if (!normalizedName) {
     throw new Error('Session-Name ist erforderlich.');
   }
 
+  const snapshot = createWizardSessionSnapshot(state);
   const sessions = readStoredSessions().filter((session) => session.name !== normalizedName);
 
   writeStoredSessions([
     {
       name: normalizedName,
       savedAt: new Date().toISOString(),
-      data: cloneWizardData(data)
+      data: cloneWizardData(snapshot.data),
+      touchedStepIds: [...snapshot.touchedStepIds],
+      currentStepId: snapshot.currentStepId
     },
     ...sessions
   ]);
 }
 
-export function loadWizardSession(name: string): WizardData | null {
+export function loadWizardSession(name: string): WizardSessionSnapshot | null {
   const session = readStoredSessions().find((item) => item.name === name);
 
-  return session ? cloneWizardData(session.data) : null;
+  return session
+    ? cloneWizardSessionSnapshot({
+        data: session.data,
+        touchedStepIds: session.touchedStepIds,
+        currentStepId: session.currentStepId
+      })
+    : null;
 }
 
-export function createWizardSessionExport(data: WizardData): WizardSessionExport {
+export function createWizardSessionExport(state: WizardState): WizardSessionExport {
+  const snapshot = createWizardSessionSnapshot(state);
+
   return {
     format: 'klasur-justierer-session',
-    version: 1,
+    version: 2,
     exportedAt: new Date().toISOString(),
-    data: cloneWizardData(data)
+    data: cloneWizardData(snapshot.data),
+    touchedStepIds: [...snapshot.touchedStepIds],
+    currentStepId: snapshot.currentStepId
   };
 }
 
-export function parseWizardSessionJson(content: string): WizardData {
+export function parseWizardSessionJson(content: string): WizardSessionSnapshot {
   const parsed: unknown = JSON.parse(content);
+  const snapshot = readWizardSessionSnapshot(parsed);
 
-  if (isWizardData(parsed)) {
-    return cloneWizardData(parsed);
-  }
-
-  if (isRecord(parsed) && isWizardData(parsed.data)) {
-    return cloneWizardData(parsed.data);
+  if (snapshot) {
+    return cloneWizardSessionSnapshot(snapshot);
   }
 
   throw new Error('Die Datei enthält keine gültige Klasur-Justierer-Session.');

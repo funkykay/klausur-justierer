@@ -1,6 +1,6 @@
 import { writable } from 'svelte/store';
 import { createSteps } from '../steps';
-import type { StepId, WizardData, WizardState, WizardStep, WizardValidationState } from '../types';
+import type { StepId, WizardData, WizardSessionSnapshot, WizardState, WizardStep, WizardValidationState } from '../types';
 
 function createInitialData(): WizardData {
   return {
@@ -61,6 +61,16 @@ function validateState(state: WizardState): WizardState {
   };
 }
 
+function markStepTouched(state: WizardState, index: number): WizardState {
+  return {
+    ...state,
+    steps: state.steps.map((step, stepIndex) => ({
+      ...step,
+      touched: stepIndex === index ? true : step.touched
+    }))
+  };
+}
+
 function createInitialState(): WizardState {
   return validateState({
     title: 'Klasur-Justierer',
@@ -80,18 +90,37 @@ function createInitialState(): WizardState {
   });
 }
 
+function applySessionSnapshot(snapshot: WizardSessionSnapshot): WizardState {
+  const touchedStepIds = new Set(snapshot.touchedStepIds);
+  const initial = validateState({
+    ...createInitialState(),
+    data: snapshot.data,
+    submitted: false
+  });
+  const snapshotStepIndex = initial.steps.findIndex((step) => step.id === snapshot.currentStepId);
+  const currentStepIndex = snapshotStepIndex >= 0 ? snapshotStepIndex : 0;
+  const restored = validateState({
+    ...initial,
+    steps: initial.steps.map((step) => ({
+      ...step,
+      touched: touchedStepIds.has(step.id)
+    })),
+    currentStepIndex
+  });
+  const firstInvalidStepIndex = restored.steps.findIndex((step) => !step.validation.valid);
+
+  if (firstInvalidStepIndex < 0) {
+    return restored;
+  }
+
+  return validateState({
+    ...markStepTouched(restored, firstInvalidStepIndex),
+    currentStepIndex: firstInvalidStepIndex
+  });
+}
+
 function createWizardStore() {
   const store = writable<WizardState>(createInitialState());
-
-  function markStepTouched(state: WizardState, index: number): WizardState {
-    return {
-      ...state,
-      steps: state.steps.map((step, stepIndex) => ({
-        ...step,
-        touched: stepIndex === index ? true : step.touched
-      }))
-    };
-  }
 
   return {
     subscribe: store.subscribe,
@@ -108,12 +137,16 @@ function createWizardStore() {
 
     replaceData(data: WizardData) {
       store.set(
-        validateState({
-          ...createInitialState(),
+        applySessionSnapshot({
           data,
-          submitted: false
+          touchedStepIds: [],
+          currentStepId: 'basis'
         })
       );
+    },
+
+    replaceSession(snapshot: WizardSessionSnapshot) {
+      store.set(applySessionSnapshot(snapshot));
     },
 
     markCurrentTouched() {
