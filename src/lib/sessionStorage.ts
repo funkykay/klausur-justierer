@@ -13,7 +13,7 @@ export type StoredWizardSession = {
 
 export type WizardSessionExport = {
   format: 'klasur-justierer-session';
-  version: 5;
+  version: 6;
   exportedAt: string;
   data: WizardData;
   touchedStepIds: StepId[];
@@ -57,9 +57,8 @@ function hasWizardStepData(stepId: StepId, data: WizardData): boolean {
   }
 
   if (stepId === 'notenschema') {
-    return (
-      data.notenschema.passingPoints !== null ||
-      data.notenschema.gradeThresholds.some((threshold) => threshold.minPoints !== null)
+    return data.notenschema.gradeThresholds.some(
+      (threshold) => threshold.grade.trim().length > 0 || threshold.minPercent !== null
     );
   }
 
@@ -163,39 +162,69 @@ function readAufgabenData(value: unknown): WizardData['aufgaben'] | null {
   };
 }
 
-function readGradeThresholds(value: unknown): GradeThreshold[] | null {
+function calculateTotalPoints(tasks: ExamTask[]): number {
+  return tasks.reduce((sum, task) => sum + (task.maxPoints ?? 0), 0);
+}
+
+function readGradeThresholdPercent(value: Record<string, unknown>, totalPoints: number): number | null | undefined {
+  if ('minPercent' in value) {
+    return isNumberOrNull(value.minPercent) ? value.minPercent : undefined;
+  }
+
+  if (!('minPoints' in value) || !isNumberOrNull(value.minPoints)) {
+    return undefined;
+  }
+
+  if (value.minPoints === null) {
+    return null;
+  }
+
+  if (totalPoints <= 0) {
+    return value.minPoints;
+  }
+
+  return Number(((value.minPoints / totalPoints) * 100).toFixed(2));
+}
+
+function readGradeThresholds(value: unknown, totalPoints: number): GradeThreshold[] | null {
   if (!Array.isArray(value)) {
     return null;
   }
 
-  const validThresholds = value.every(
-    (threshold) =>
-      isRecord(threshold) && typeof threshold.grade === 'string' && isNumberOrNull(threshold.minPoints)
-  );
+  const thresholds: GradeThreshold[] = [];
 
-  if (!validThresholds) {
-    return null;
+  for (const threshold of value) {
+    if (!isRecord(threshold) || typeof threshold.grade !== 'string') {
+      return null;
+    }
+
+    const minPercent = readGradeThresholdPercent(threshold, totalPoints);
+
+    if (minPercent === undefined) {
+      return null;
+    }
+
+    thresholds.push({
+      grade: threshold.grade,
+      minPercent
+    });
   }
 
-  return value.map((threshold) => ({
-    grade: threshold.grade as string,
-    minPoints: threshold.minPoints as number | null
-  }));
+  return thresholds;
 }
 
-function readNotenschemaData(value: unknown): WizardData['notenschema'] | null {
-  if (!isRecord(value) || !isNumberOrNull(value.passingPoints)) {
+function readNotenschemaData(value: unknown, totalPoints: number): WizardData['notenschema'] | null {
+  if (!isRecord(value)) {
     return null;
   }
 
-  const gradeThresholds = readGradeThresholds(value.gradeThresholds);
+  const gradeThresholds = readGradeThresholds(value.gradeThresholds, totalPoints);
 
   if (!gradeThresholds) {
     return null;
   }
 
   return {
-    passingPoints: value.passingPoints,
     gradeThresholds
   };
 }
@@ -229,10 +258,16 @@ function readWizardData(value: unknown): WizardData | null {
 
   const basis = readBasisData(value.basis);
   const aufgaben = readAufgabenData(value.aufgaben);
-  const notenschema = readNotenschemaData(value.notenschema);
+
+  if (!basis || !aufgaben) {
+    return null;
+  }
+
+  const totalPoints = calculateTotalPoints(aufgaben.tasks);
+  const notenschema = readNotenschemaData(value.notenschema, totalPoints);
   const justierung = readJustierungData(value.justierung);
 
-  if (!basis || !aufgaben || !notenschema || !justierung) {
+  if (!notenschema || !justierung) {
     return null;
   }
 
@@ -303,7 +338,6 @@ function cloneWizardData(data: WizardData): WizardData {
       }))
     },
     notenschema: {
-      passingPoints: data.notenschema.passingPoints,
       gradeThresholds: data.notenschema.gradeThresholds.map((threshold) => ({
         ...threshold
       }))
@@ -414,7 +448,7 @@ export function createWizardSessionExport(state: WizardState): WizardSessionExpo
 
   return {
     format: 'klasur-justierer-session',
-    version: 5,
+    version: 6,
     exportedAt: new Date().toISOString(),
     data: cloneWizardData(snapshot.data),
     touchedStepIds: [...snapshot.touchedStepIds],

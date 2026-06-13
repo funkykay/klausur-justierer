@@ -17,12 +17,13 @@ function createInitialData(): WizardData {
       ]
     },
     notenschema: {
-      passingPoints: null,
       gradeThresholds: [
-        { grade: '1,0', minPoints: null },
-        { grade: '2,0', minPoints: null },
-        { grade: '3,0', minPoints: null },
-        { grade: '4,0', minPoints: null }
+        { grade: '1', minPercent: 92 },
+        { grade: '2', minPercent: 81 },
+        { grade: '3', minPercent: 67 },
+        { grade: '4', minPercent: 50 },
+        { grade: '5', minPercent: 30 },
+        { grade: '6', minPercent: 0 }
       ]
     },
     justierung: {

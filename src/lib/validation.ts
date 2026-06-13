@@ -23,6 +23,10 @@ function hasNonNegativeNumber(value: number | null): value is number {
   return typeof value === 'number' && Number.isFinite(value) && value >= 0;
 }
 
+function hasPercentNumber(value: number | null): value is number {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 100;
+}
+
 function validateBasis(data: WizardData): ValidationResult {
   const errors: FieldErrors = {};
   const { basis } = data;
@@ -61,17 +65,19 @@ function validateAufgaben(data: WizardData): ValidationResult {
 
 function validateNotenschema(data: WizardData): ValidationResult {
   const errors: FieldErrors = {};
-  const { passingPoints, gradeThresholds } = data.notenschema;
+  const { gradeThresholds } = data.notenschema;
 
-  if (!hasPositiveNumber(passingPoints)) {
-    addError(errors, 'passingPoints', 'Bestehensgrenze muss größer als 0 sein.');
+  if (gradeThresholds.length === 0) {
+    addError(errors, 'gradeThresholds', 'Mindestens eine Note ist erforderlich.');
   }
 
   gradeThresholds.forEach((threshold, index) => {
-    const field = `gradeThresholds.${index}.minPoints`;
+    if (isBlank(threshold.grade)) {
+      addError(errors, `gradeThresholds.${index}.grade`, 'Note ist erforderlich.');
+    }
 
-    if (!hasNonNegativeNumber(threshold.minPoints)) {
-      addError(errors, field, `Mindestpunktzahl für ${threshold.grade} ist erforderlich.`);
+    if (!hasPercentNumber(threshold.minPercent)) {
+      addError(errors, `gradeThresholds.${index}.minPercent`, 'Prozentwert muss zwischen 0 und 100 liegen.');
     }
   });
 
@@ -80,14 +86,14 @@ function validateNotenschema(data: WizardData): ValidationResult {
     const current = gradeThresholds[index];
 
     if (
-      hasNonNegativeNumber(previous.minPoints) &&
-      hasNonNegativeNumber(current.minPoints) &&
-      previous.minPoints <= current.minPoints
+      hasPercentNumber(previous.minPercent) &&
+      hasPercentNumber(current.minPercent) &&
+      previous.minPercent <= current.minPercent
     ) {
       addError(
         errors,
-        `gradeThresholds.${index}.minPoints`,
-        `${current.grade} muss unterhalb der vorherigen Schwelle liegen.`
+        `gradeThresholds.${index}.minPercent`,
+        `${current.grade || 'Diese Note'} muss unterhalb der vorherigen Schwelle liegen.`
       );
     }
   }

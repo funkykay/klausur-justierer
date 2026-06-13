@@ -16,7 +16,7 @@ export type ExamTask = {
 
 export type GradeThreshold = {
   grade: string;
-  minPoints: number | null;
+  minPercent: number | null;
 };
 
 export type WizardData = {
@@ -28,7 +28,6 @@ export type WizardData = {
     tasks: ExamTask[];
   };
   notenschema: {
-    passingPoints: number | null;
     gradeThresholds: GradeThreshold[];
   };
   justierung: {
