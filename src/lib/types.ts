@@ -16,11 +16,8 @@ export type GradeThreshold = {
 
 export type WizardData = {
   basis: {
-    title: string;
+    topic: string;
     course: string;
-    examDate: string;
-    maxPoints: number | null;
-    participantCount: number | null;
   };
   notenschema: {
     passingPoints: number | null;
@@ -29,7 +26,6 @@ export type WizardData = {
   justierung: {
     method: 'none' | 'bonus' | 'linear';
     bonusPoints: number | null;
-    capAtMaxPoints: boolean;
     reviewer: string;
     reason: string;
   };

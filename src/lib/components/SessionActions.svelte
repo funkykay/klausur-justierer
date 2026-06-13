@@ -43,6 +43,12 @@
     fileError = '';
   }
 
+  function createDefaultSessionName(): string {
+    return [$wizard.data.basis.course.trim(), $wizard.data.basis.topic.trim()]
+      .filter((value) => value.length > 0)
+      .join(' ');
+  }
+
   function handleWindowClick(event: MouseEvent): void {
     const target = event.target;
 
@@ -76,7 +82,7 @@
   function openSaveModal(): void {
     closeMenus();
     refreshSessions();
-    sessionName = $wizard.data.basis.title.trim();
+    sessionName = createDefaultSessionName();
     activeModal = 'save';
   }
 
@@ -150,7 +156,7 @@
     const downloadLink = document.createElement('a');
 
     downloadLink.href = url;
-    downloadLink.download = createWizardSessionFilename($wizard.data.basis.title);
+    downloadLink.download = createWizardSessionFilename($wizard.data.basis.course, $wizard.data.basis.topic);
     document.body.appendChild(downloadLink);
     downloadLink.click();
     document.body.removeChild(downloadLink);

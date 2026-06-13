@@ -23,32 +23,16 @@ function hasNonNegativeNumber(value: number | null): value is number {
   return typeof value === 'number' && Number.isFinite(value) && value >= 0;
 }
 
-function isInteger(value: number | null): value is number {
-  return typeof value === 'number' && Number.isInteger(value);
-}
-
 function validateBasis(data: WizardData): ValidationResult {
   const errors: FieldErrors = {};
   const { basis } = data;
 
-  if (isBlank(basis.title)) {
-    addError(errors, 'title', 'Titel ist erforderlich.');
+  if (isBlank(basis.topic)) {
+    addError(errors, 'topic', 'Thema ist erforderlich.');
   }
 
   if (isBlank(basis.course)) {
     addError(errors, 'course', 'Kurs ist erforderlich.');
-  }
-
-  if (isBlank(basis.examDate)) {
-    addError(errors, 'examDate', 'Datum ist erforderlich.');
-  }
-
-  if (!hasPositiveNumber(basis.maxPoints)) {
-    addError(errors, 'maxPoints', 'Maximalpunktzahl muss größer als 0 sein.');
-  }
-
-  if (!isInteger(basis.participantCount) || !hasPositiveNumber(basis.participantCount)) {
-    addError(errors, 'participantCount', 'Teilnehmerzahl muss eine positive ganze Zahl sein.');
   }
 
   return createValidationResult(errors);
@@ -56,15 +40,10 @@ function validateBasis(data: WizardData): ValidationResult {
 
 function validateNotenschema(data: WizardData): ValidationResult {
   const errors: FieldErrors = {};
-  const { maxPoints } = data.basis;
   const { passingPoints, gradeThresholds } = data.notenschema;
 
   if (!hasPositiveNumber(passingPoints)) {
     addError(errors, 'passingPoints', 'Bestehensgrenze muss größer als 0 sein.');
-  }
-
-  if (hasPositiveNumber(maxPoints) && hasPositiveNumber(passingPoints) && passingPoints > maxPoints) {
-    addError(errors, 'passingPoints', 'Bestehensgrenze darf nicht über der Maximalpunktzahl liegen.');
   }
 
   gradeThresholds.forEach((threshold, index) => {
@@ -72,14 +51,6 @@ function validateNotenschema(data: WizardData): ValidationResult {
 
     if (!hasNonNegativeNumber(threshold.minPoints)) {
       addError(errors, field, `Mindestpunktzahl für ${threshold.grade} ist erforderlich.`);
-    }
-
-    if (
-      hasPositiveNumber(maxPoints) &&
-      hasNonNegativeNumber(threshold.minPoints) &&
-      threshold.minPoints > maxPoints
-    ) {
-      addError(errors, field, `Mindestpunktzahl für ${threshold.grade} liegt über der Maximalpunktzahl.`);
     }
   });
 
@@ -105,20 +76,10 @@ function validateNotenschema(data: WizardData): ValidationResult {
 
 function validateJustierung(data: WizardData): ValidationResult {
   const errors: FieldErrors = {};
-  const { justierung, basis } = data;
+  const { justierung } = data;
 
-  if (justierung.method === 'bonus') {
-    if (!hasPositiveNumber(justierung.bonusPoints)) {
-      addError(errors, 'bonusPoints', 'Bonus muss größer als 0 sein.');
-    }
-
-    if (
-      hasPositiveNumber(justierung.bonusPoints) &&
-      hasPositiveNumber(basis.maxPoints) &&
-      justierung.bonusPoints > basis.maxPoints * 0.2
-    ) {
-      addError(errors, 'bonusPoints', 'Bonus darf höchstens 20 % der Maximalpunktzahl betragen.');
-    }
+  if (justierung.method === 'bonus' && !hasPositiveNumber(justierung.bonusPoints)) {
+    addError(errors, 'bonusPoints', 'Bonus muss größer als 0 sein.');
   }
 
   if (justierung.method !== 'none' && isBlank(justierung.reason)) {

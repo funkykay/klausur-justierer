@@ -17,10 +17,6 @@
     return value === '' ? null : Number(value);
   }
 
-  function checkedValue(event: Event): boolean {
-    return (event.currentTarget as HTMLInputElement).checked;
-  }
-
   function updateJustierung<K extends keyof WizardData['justierung']>(
     key: K,
     value: WizardData['justierung'][K]
@@ -106,17 +102,6 @@
       <FieldError errors={showErrors ? errors.reviewer : undefined} />
     </label>
   </div>
-
-  <label class="flex items-center gap-2 text-sm font-medium text-slate-800">
-    <input
-      class="h-4 w-4 rounded border-slate-300 accent-slate-950"
-      type="checkbox"
-      checked={data.capAtMaxPoints}
-      onchange={(event) => updateJustierung('capAtMaxPoints', checkedValue(event))}
-      onblur={wizard.markCurrentTouched}
-    />
-    Auf Maximalpunktzahl deckeln
-  </label>
 
   <label class="block">
     <span class="field-label">Begründung</span>

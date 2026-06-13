@@ -44,20 +44,11 @@
     <section class="rounded-lg border border-slate-200 p-4">
       <h3 class="text-sm font-semibold text-slate-950">Basisdaten</h3>
       <dl class="mt-3 grid grid-cols-[10rem_1fr] gap-x-3 gap-y-2 text-sm">
-        <dt class="text-slate-500">Titel</dt>
-        <dd class="font-medium text-slate-900">{formatValue(data.basis.title)}</dd>
+        <dt class="text-slate-500">Thema</dt>
+        <dd class="font-medium text-slate-900">{formatValue(data.basis.topic)}</dd>
 
         <dt class="text-slate-500">Kurs</dt>
         <dd class="font-medium text-slate-900">{formatValue(data.basis.course)}</dd>
-
-        <dt class="text-slate-500">Datum</dt>
-        <dd class="font-medium text-slate-900">{formatValue(data.basis.examDate)}</dd>
-
-        <dt class="text-slate-500">Maximalpunkte</dt>
-        <dd class="font-medium text-slate-900">{formatValue(data.basis.maxPoints)}</dd>
-
-        <dt class="text-slate-500">Teilnehmer</dt>
-        <dd class="font-medium text-slate-900">{formatValue(data.basis.participantCount)}</dd>
       </dl>
     </section>
 
@@ -69,9 +60,6 @@
 
         <dt class="text-slate-500">Bonus</dt>
         <dd class="font-medium text-slate-900">{formatValue(data.justierung.bonusPoints)}</dd>
-
-        <dt class="text-slate-500">Deckelung</dt>
-        <dd class="font-medium text-slate-900">{data.justierung.capAtMaxPoints ? 'Ja' : 'Nein'}</dd>
 
         <dt class="text-slate-500">Prüfer</dt>
         <dd class="font-medium text-slate-900">{formatValue(data.justierung.reviewer)}</dd>

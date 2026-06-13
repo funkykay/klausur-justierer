@@ -1,4 +1,4 @@
-import type { StepId, WizardData, WizardSessionSnapshot, WizardState } from './types';
+import type { GradeThreshold, StepId, WizardData, WizardSessionSnapshot, WizardState } from './types';
 
 const STORAGE_KEY = 'klasur-justierer:sessions';
 const STEP_IDS: StepId[] = ['basis', 'notenschema', 'justierung', 'abschluss'];
@@ -13,7 +13,7 @@ export type StoredWizardSession = {
 
 export type WizardSessionExport = {
   format: 'klasur-justierer-session';
-  version: 2;
+  version: 3;
   exportedAt: string;
   data: WizardData;
   touchedStepIds: StepId[];
@@ -38,13 +38,7 @@ function isStepId(value: unknown): value is StepId {
 
 function hasWizardStepData(stepId: StepId, data: WizardData): boolean {
   if (stepId === 'basis') {
-    return (
-      data.basis.title.trim().length > 0 ||
-      data.basis.course.trim().length > 0 ||
-      data.basis.examDate.trim().length > 0 ||
-      data.basis.maxPoints !== null ||
-      data.basis.participantCount !== null
-    );
+    return data.basis.topic.trim().length > 0 || data.basis.course.trim().length > 0;
   }
 
   if (stepId === 'notenschema') {
@@ -58,7 +52,6 @@ function hasWizardStepData(stepId: StepId, data: WizardData): boolean {
     return (
       data.justierung.method !== 'none' ||
       data.justierung.bonusPoints !== null ||
-      data.justierung.capAtMaxPoints !== true ||
       data.justierung.reviewer.trim().length > 0 ||
       data.justierung.reason.trim().length > 0
     );
@@ -79,79 +72,146 @@ function readCurrentStepId(value: unknown): StepId {
   return isStepId(value) ? value : 'basis';
 }
 
-function isWizardData(value: unknown): value is WizardData {
-  if (!isRecord(value)) {
-    return false;
+function readBasisData(value: unknown): WizardData['basis'] | null {
+  if (!isRecord(value) || typeof value.course !== 'string') {
+    return null;
   }
 
-  const { basis, notenschema, justierung, abschluss } = value;
-
-  if (!isRecord(basis)) {
-    return false;
+  if (typeof value.topic === 'string') {
+    return {
+      topic: value.topic,
+      course: value.course
+    };
   }
 
-  if (
-    typeof basis.title !== 'string' ||
-    typeof basis.course !== 'string' ||
-    typeof basis.examDate !== 'string' ||
-    !isNumberOrNull(basis.maxPoints) ||
-    !isNumberOrNull(basis.participantCount)
-  ) {
-    return false;
+  if (typeof value.name === 'string') {
+    return {
+      topic: value.name,
+      course: value.course
+    };
   }
 
-  if (!isRecord(notenschema) || !isNumberOrNull(notenschema.passingPoints)) {
-    return false;
+  if (typeof value.title === 'string') {
+    return {
+      topic: value.title,
+      course: value.course
+    };
   }
 
-  if (!Array.isArray(notenschema.gradeThresholds)) {
-    return false;
+  return null;
+}
+
+function readGradeThresholds(value: unknown): GradeThreshold[] | null {
+  if (!Array.isArray(value)) {
+    return null;
   }
 
-  const validThresholds = notenschema.gradeThresholds.every(
+  const validThresholds = value.every(
     (threshold) =>
       isRecord(threshold) && typeof threshold.grade === 'string' && isNumberOrNull(threshold.minPoints)
   );
 
   if (!validThresholds) {
-    return false;
+    return null;
   }
 
-  if (!isRecord(justierung)) {
-    return false;
+  return value.map((threshold) => ({
+    grade: threshold.grade as string,
+    minPoints: threshold.minPoints as number | null
+  }));
+}
+
+function readNotenschemaData(value: unknown): WizardData['notenschema'] | null {
+  if (!isRecord(value) || !isNumberOrNull(value.passingPoints)) {
+    return null;
+  }
+
+  const gradeThresholds = readGradeThresholds(value.gradeThresholds);
+
+  if (!gradeThresholds) {
+    return null;
+  }
+
+  return {
+    passingPoints: value.passingPoints,
+    gradeThresholds
+  };
+}
+
+function readJustierungData(value: unknown): WizardData['justierung'] | null {
+  if (!isRecord(value)) {
+    return null;
   }
 
   if (
-    !isMethod(justierung.method) ||
-    !isNumberOrNull(justierung.bonusPoints) ||
-    typeof justierung.capAtMaxPoints !== 'boolean' ||
-    typeof justierung.reviewer !== 'string' ||
-    typeof justierung.reason !== 'string'
+    !isMethod(value.method) ||
+    !isNumberOrNull(value.bonusPoints) ||
+    typeof value.reviewer !== 'string' ||
+    typeof value.reason !== 'string'
   ) {
-    return false;
+    return null;
   }
 
-  if (!isRecord(abschluss) || typeof abschluss.confirmed !== 'boolean') {
-    return false;
+  return {
+    method: value.method,
+    bonusPoints: value.bonusPoints,
+    reviewer: value.reviewer,
+    reason: value.reason
+  };
+}
+
+function readAbschlussData(value: unknown): WizardData['abschluss'] | null {
+  if (!isRecord(value) || typeof value.confirmed !== 'boolean') {
+    return null;
   }
 
-  return true;
+  return {
+    confirmed: value.confirmed
+  };
+}
+
+function readWizardData(value: unknown): WizardData | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  const basis = readBasisData(value.basis);
+  const notenschema = readNotenschemaData(value.notenschema);
+  const justierung = readJustierungData(value.justierung);
+  const abschluss = readAbschlussData(value.abschluss);
+
+  if (!basis || !notenschema || !justierung || !abschluss) {
+    return null;
+  }
+
+  return {
+    basis,
+    notenschema,
+    justierung,
+    abschluss
+  };
 }
 
 function readWizardSessionSnapshot(value: unknown): WizardSessionSnapshot | null {
-  if (isWizardData(value)) {
+  const directData = readWizardData(value);
+
+  if (directData) {
     return {
-      data: cloneWizardData(value),
+      data: cloneWizardData(directData),
       touchedStepIds: [],
       currentStepId: 'basis'
     };
   }
 
-  if (!isRecord(value) || !isWizardData(value.data)) {
+  if (!isRecord(value)) {
     return null;
   }
 
-  const data = cloneWizardData(value.data);
+  const data = readWizardData(value.data);
+
+  if (!data) {
+    return null;
+  }
 
   return {
     data,
@@ -160,16 +220,16 @@ function readWizardSessionSnapshot(value: unknown): WizardSessionSnapshot | null
   };
 }
 
-function isStoredWizardSession(value: unknown): value is StoredWizardSession {
-  return isRecord(value) && typeof value.name === 'string' && typeof value.savedAt === 'string' && isWizardData(value.data);
-}
-
 function normalizeStoredWizardSession(value: unknown): StoredWizardSession | null {
-  if (!isStoredWizardSession(value)) {
+  if (!isRecord(value) || typeof value.name !== 'string' || typeof value.savedAt !== 'string') {
     return null;
   }
 
-  const data = cloneWizardData(value.data);
+  const data = readWizardData(value.data);
+
+  if (!data) {
+    return null;
+  }
 
   return {
     name: value.name,
@@ -300,7 +360,7 @@ export function createWizardSessionExport(state: WizardState): WizardSessionExpo
 
   return {
     format: 'klasur-justierer-session',
-    version: 2,
+    version: 3,
     exportedAt: new Date().toISOString(),
     data: cloneWizardData(snapshot.data),
     touchedStepIds: [...snapshot.touchedStepIds],
@@ -319,9 +379,10 @@ export function parseWizardSessionJson(content: string): WizardSessionSnapshot {
   throw new Error('Die Datei enthält keine gültige Klasur-Justierer-Session.');
 }
 
-export function createWizardSessionFilename(title: string): string {
-  const normalizedTitle = title.trim() || 'klasur-session';
-  const slug = normalizedTitle
+export function createWizardSessionFilename(course: string, topic: string): string {
+  const normalizedName =
+    [course.trim(), topic.trim()].filter((value) => value.length > 0).join(' ') || 'klasur-session';
+  const slug = normalizedName
     .normalize('NFKD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()

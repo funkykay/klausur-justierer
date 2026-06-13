@@ -5,11 +5,8 @@ import type { StepId, WizardData, WizardSessionSnapshot, WizardState, WizardStep
 function createInitialData(): WizardData {
   return {
     basis: {
-      title: '',
-      course: '',
-      examDate: '',
-      maxPoints: null,
-      participantCount: null
+      topic: '',
+      course: ''
     },
     notenschema: {
       passingPoints: null,
@@ -23,7 +20,6 @@ function createInitialData(): WizardData {
     justierung: {
       method: 'none',
       bonusPoints: null,
-      capAtMaxPoints: true,
       reviewer: '',
       reason: ''
     },
