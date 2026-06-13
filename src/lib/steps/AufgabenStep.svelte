@@ -61,75 +61,66 @@
 </script>
 
 <div class="space-y-6">
-  <div>
-    <div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-      <div>
-        <h3 class="text-sm font-semibold text-slate-900">Aufgaben der Klausur</h3>
-        <p class="mt-1 text-sm text-slate-600">Lege pro Aufgabe einen Namen und die erreichbare Punktzahl fest.</p>
-      </div>
-
-      <button class="button-secondary" type="button" onclick={addTask}>Aufgabe hinzufügen</button>
+  <div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+    <div>
+      <h3 class="text-sm font-semibold text-slate-900">Aufgaben der Klausur</h3>
+      <p class="mt-1 text-sm text-slate-600">Lege pro Aufgabe einen Namen und die erreichbare Punktzahl fest.</p>
     </div>
 
-    <FieldError errors={showErrors ? errors.tasks : undefined} />
+    <button class="button-secondary" type="button" onclick={addTask}>Aufgabe hinzufügen</button>
+  </div>
 
-    <div class="mt-3 overflow-hidden rounded-lg border border-slate-200">
-      <table class="w-full border-collapse text-left text-sm">
-        <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-          <tr>
-            <th class="px-4 py-3 font-semibold">Aufgabe</th>
-            <th class="w-48 px-4 py-3 font-semibold">Punkte</th>
-            <th class="w-28 px-4 py-3 font-semibold">
-              <span class="sr-only">Aktionen</span>
-            </th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-slate-200 bg-white">
-          {#each data.tasks as task, index}
-            <tr>
-              <td class="px-4 py-3 align-top">
-                <input
-                  class={`field-input mt-0 ${showErrors && errors[`tasks.${index}.name`] ? 'field-input-error' : ''}`}
-                  type="text"
-                  value={task.name}
-                  oninput={(event) => updateTask(index, 'name', textValue(event))}
-                  onblur={wizard.markCurrentTouched}
-                />
-                <FieldError errors={showErrors ? errors[`tasks.${index}.name`] : undefined} />
-              </td>
-              <td class="px-4 py-3 align-top">
-                <input
-                  class={`field-input mt-0 ${showErrors && errors[`tasks.${index}.maxPoints`] ? 'field-input-error' : ''}`}
-                  type="number"
-                  min="0"
-                  step="0.5"
-                  value={task.maxPoints ?? ''}
-                  oninput={(event) => updateTask(index, 'maxPoints', numberValue(event))}
-                  onblur={wizard.markCurrentTouched}
-                />
-                <FieldError errors={showErrors ? errors[`tasks.${index}.maxPoints`] : undefined} />
-              </td>
-              <td class="px-4 py-3 align-top">
-                <button
-                  class="button-secondary w-full"
-                  type="button"
-                  disabled={data.tasks.length === 1}
-                  onclick={() => removeTask(index)}
-                >
-                  Entfernen
-                </button>
-              </td>
-            </tr>
-          {/each}
-        </tbody>
-        <tfoot class="border-t border-slate-200 bg-slate-50">
-          <tr>
-            <td class="px-4 py-3 text-sm font-semibold text-slate-900">Gesamt</td>
-            <td class="px-4 py-3 text-sm font-semibold text-slate-900">{totalPoints}</td>
-            <td class="px-4 py-3"></td>
-          </tr>
-        </tfoot>
-      </table>
+  <FieldError errors={showErrors ? errors.tasks : undefined} />
+
+  <div class="space-y-3">
+    {#each data.tasks as task, index}
+      <section class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <div class="grid gap-4 md:grid-cols-[minmax(0,1fr)_12rem_7rem] md:items-start">
+          <label>
+            <span class="field-label">Aufgabe</span>
+            <input
+              class={`field-input ${showErrors && errors[`tasks.${index}.name`] ? 'field-input-error' : ''}`}
+              type="text"
+              value={task.name}
+              oninput={(event) => updateTask(index, 'name', textValue(event))}
+              onblur={wizard.markCurrentTouched}
+            />
+            <FieldError errors={showErrors ? errors[`tasks.${index}.name`] : undefined} />
+          </label>
+
+          <label>
+            <span class="field-label">Punkte</span>
+            <input
+              class={`field-input ${showErrors && errors[`tasks.${index}.maxPoints`] ? 'field-input-error' : ''}`}
+              type="number"
+              min="0"
+              step="0.5"
+              value={task.maxPoints ?? ''}
+              oninput={(event) => updateTask(index, 'maxPoints', numberValue(event))}
+              onblur={wizard.markCurrentTouched}
+            />
+            <FieldError errors={showErrors ? errors[`tasks.${index}.maxPoints`] : undefined} />
+          </label>
+
+          <div class="md:pt-6">
+            <button
+              class="button-secondary w-full"
+              type="button"
+              disabled={data.tasks.length === 1}
+              onclick={() => removeTask(index)}
+            >
+              Entfernen
+            </button>
+          </div>
+        </div>
+      </section>
+    {/each}
+  </div>
+
+  <div class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+    <div class="flex items-center justify-between gap-4">
+      <span class="text-sm font-semibold text-slate-900">Gesamt</span>
+      <span class="text-sm font-semibold text-slate-900">{totalPoints}</span>
     </div>
   </div>
 </div>
