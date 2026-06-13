@@ -30,9 +30,6 @@ function createInitialData(): WizardData {
       bonusPoints: null,
       reviewer: '',
       reason: ''
-    },
-    abschluss: {
-      confirmed: false
     }
   };
 }
@@ -87,11 +84,9 @@ function createInitialState(): WizardState {
         basis: {},
         aufgaben: {},
         notenschema: {},
-        justierung: {},
-        abschluss: {}
+        justierung: {}
       }
-    },
-    submitted: false
+    }
   });
 }
 
@@ -99,8 +94,7 @@ function applySessionSnapshot(snapshot: WizardSessionSnapshot): WizardState {
   const touchedStepIds = new Set(snapshot.touchedStepIds);
   const initial = validateState({
     ...createInitialState(),
-    data: snapshot.data,
-    submitted: false
+    data: snapshot.data
   });
   const snapshotStepIndex = initial.steps.findIndex((step) => step.id === snapshot.currentStepId);
   const currentStepIndex = snapshotStepIndex >= 0 ? snapshotStepIndex : 0;
@@ -134,8 +128,7 @@ function createWizardStore() {
       store.update((state) =>
         validateState({
           ...state,
-          data: updater(state.data),
-          submitted: false
+          data: updater(state.data)
         })
       );
     },
@@ -164,8 +157,7 @@ function createWizardStore() {
 
         return validateState({
           ...markStepTouched(state, state.currentStepIndex),
-          currentStepIndex: safeIndex,
-          submitted: false
+          currentStepIndex: safeIndex
         });
       });
     },
@@ -176,8 +168,7 @@ function createWizardStore() {
 
         return validateState({
           ...markStepTouched(state, state.currentStepIndex),
-          currentStepIndex: previousIndex,
-          submitted: false
+          currentStepIndex: previousIndex
         });
       });
     },
@@ -188,28 +179,8 @@ function createWizardStore() {
 
         return validateState({
           ...markStepTouched(state, state.currentStepIndex),
-          currentStepIndex: nextIndex,
-          submitted: false
+          currentStepIndex: nextIndex
         });
-      });
-    },
-
-    finish() {
-      store.update((state) => {
-        const touchedState = {
-          ...state,
-          steps: state.steps.map((step) => ({
-            ...step,
-            touched: true
-          }))
-        };
-
-        const validated = validateState(touchedState);
-
-        return {
-          ...validated,
-          submitted: validated.validation.valid
-        };
       });
     },
 

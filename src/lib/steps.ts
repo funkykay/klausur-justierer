@@ -1,16 +1,9 @@
 import type { WizardStep } from './types';
-import {
-  validateAbschluss,
-  validateAufgaben,
-  validateBasis,
-  validateJustierung,
-  validateNotenschema
-} from './validation';
+import { validateAufgaben, validateBasis, validateJustierung, validateNotenschema } from './validation';
 import BasisStep from './steps/BasisStep.svelte';
 import AufgabenStep from './steps/AufgabenStep.svelte';
 import NotenschemaStep from './steps/NotenschemaStep.svelte';
 import JustierungStep from './steps/JustierungStep.svelte';
-import AbschlussStep from './steps/AbschlussStep.svelte';
 
 const emptyValidation = {
   valid: true,
@@ -48,14 +41,6 @@ export function createSteps(): WizardStep[] {
       title: 'Justierung',
       view: JustierungStep,
       validate: validateJustierung,
-      touched: false,
-      validation: emptyValidation
-    },
-    {
-      id: 'abschluss',
-      title: 'Abschluss',
-      view: AbschlussStep,
-      validate: validateAbschluss,
       touched: false,
       validation: emptyValidation
     }

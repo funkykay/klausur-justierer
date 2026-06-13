@@ -1,7 +1,7 @@
 import type { ExamTask, GradeThreshold, StepId, WizardData, WizardSessionSnapshot, WizardState } from './types';
 
 const STORAGE_KEY = 'klasur-justierer:sessions';
-const STEP_IDS: StepId[] = ['basis', 'aufgaben', 'notenschema', 'justierung', 'abschluss'];
+const STEP_IDS: StepId[] = ['basis', 'aufgaben', 'notenschema', 'justierung'];
 
 export type StoredWizardSession = {
   name: string;
@@ -13,7 +13,7 @@ export type StoredWizardSession = {
 
 export type WizardSessionExport = {
   format: 'klasur-justierer-session';
-  version: 4;
+  version: 5;
   exportedAt: string;
   data: WizardData;
   touchedStepIds: StepId[];
@@ -72,7 +72,7 @@ function hasWizardStepData(stepId: StepId, data: WizardData): boolean {
     );
   }
 
-  return data.abschluss.confirmed;
+  return false;
 }
 
 function readTouchedStepIds(value: unknown, data: WizardData): StepId[] {
@@ -84,7 +84,15 @@ function readTouchedStepIds(value: unknown, data: WizardData): StepId[] {
 }
 
 function readCurrentStepId(value: unknown): StepId {
-  return isStepId(value) ? value : 'basis';
+  if (isStepId(value)) {
+    return value;
+  }
+
+  if (value === 'abschluss') {
+    return 'justierung';
+  }
+
+  return 'basis';
 }
 
 function readBasisData(value: unknown): WizardData['basis'] | null {
@@ -214,16 +222,6 @@ function readJustierungData(value: unknown): WizardData['justierung'] | null {
   };
 }
 
-function readAbschlussData(value: unknown): WizardData['abschluss'] | null {
-  if (!isRecord(value) || typeof value.confirmed !== 'boolean') {
-    return null;
-  }
-
-  return {
-    confirmed: value.confirmed
-  };
-}
-
 function readWizardData(value: unknown): WizardData | null {
   if (!isRecord(value)) {
     return null;
@@ -233,9 +231,8 @@ function readWizardData(value: unknown): WizardData | null {
   const aufgaben = readAufgabenData(value.aufgaben);
   const notenschema = readNotenschemaData(value.notenschema);
   const justierung = readJustierungData(value.justierung);
-  const abschluss = readAbschlussData(value.abschluss);
 
-  if (!basis || !aufgaben || !notenschema || !justierung || !abschluss) {
+  if (!basis || !aufgaben || !notenschema || !justierung) {
     return null;
   }
 
@@ -243,8 +240,7 @@ function readWizardData(value: unknown): WizardData | null {
     basis,
     aufgaben,
     notenschema,
-    justierung,
-    abschluss
+    justierung
   };
 }
 
@@ -314,9 +310,6 @@ function cloneWizardData(data: WizardData): WizardData {
     },
     justierung: {
       ...data.justierung
-    },
-    abschluss: {
-      ...data.abschluss
     }
   };
 }
@@ -421,7 +414,7 @@ export function createWizardSessionExport(state: WizardState): WizardSessionExpo
 
   return {
     format: 'klasur-justierer-session',
-    version: 4,
+    version: 5,
     exportedAt: new Date().toISOString(),
     data: cloneWizardData(snapshot.data),
     touchedStepIds: [...snapshot.touchedStepIds],

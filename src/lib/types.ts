@@ -1,6 +1,6 @@
 import type { Component } from 'svelte';
 
-export type StepId = 'basis' | 'aufgaben' | 'notenschema' | 'justierung' | 'abschluss';
+export type StepId = 'basis' | 'aufgaben' | 'notenschema' | 'justierung';
 
 export type FieldErrors = Record<string, string[]>;
 
@@ -37,9 +37,6 @@ export type WizardData = {
     reviewer: string;
     reason: string;
   };
-  abschluss: {
-    confirmed: boolean;
-  };
 };
 
 export type WizardSessionSnapshot = {
@@ -68,5 +65,4 @@ export type WizardState = {
   steps: WizardStep[];
   currentStepIndex: number;
   validation: WizardValidationState;
-  submitted: boolean;
 };

@@ -114,14 +114,4 @@ function validateJustierung(data: WizardData): ValidationResult {
   return createValidationResult(errors);
 }
 
-function validateAbschluss(data: WizardData): ValidationResult {
-  const errors: FieldErrors = {};
-
-  if (!data.abschluss.confirmed) {
-    addError(errors, 'confirmed', 'Bestätigung ist erforderlich.');
-  }
-
-  return createValidationResult(errors);
-}
-
-export { validateAbschluss, validateAufgaben, validateBasis, validateJustierung, validateNotenschema };
+export { validateAufgaben, validateBasis, validateJustierung, validateNotenschema };
