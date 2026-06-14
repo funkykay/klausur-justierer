@@ -136,17 +136,6 @@ function validateTeilnehmer(data: WizardData): ValidationResult {
   return createValidationResult(errors);
 }
 
-function hasJustierungChanges(data: WizardData): boolean {
-  return (
-    data.justierung.droppedTaskIndexes.length > 0 ||
-    data.notenschema.gradeThresholds.some((threshold, index) => {
-      const adjustedThreshold = data.justierung.gradeThresholds[index];
-
-      return adjustedThreshold !== undefined && adjustedThreshold.minPercent !== threshold.minPercent;
-    })
-  );
-}
-
 function validateJustierung(data: WizardData): ValidationResult {
   const errors: FieldErrors = {};
   const { justierung } = data;
@@ -178,14 +167,6 @@ function validateJustierung(data: WizardData): ValidationResult {
         `${grade} muss unterhalb der vorherigen justierten Schwelle liegen.`
       );
     }
-  }
-
-  if (hasJustierungChanges(data) && isBlank(justierung.reason)) {
-    addError(errors, 'reason', 'Begründung ist für eine Justierung erforderlich.');
-  }
-
-  if (isBlank(justierung.reviewer)) {
-    addError(errors, 'reviewer', 'Prüfer ist erforderlich.');
   }
 
   return createValidationResult(errors);

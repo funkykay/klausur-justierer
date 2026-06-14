@@ -61,9 +61,7 @@ function createInitialData(): WizardData {
       layout: 'sideBySide',
       resultView: 'chart',
       droppedTaskIndexes: [],
-      gradeThresholds: cloneGradeThresholds(gradeThresholds),
-      reviewer: '',
-      reason: ''
+      gradeThresholds: cloneGradeThresholds(gradeThresholds)
     }
   };
 }

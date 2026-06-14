@@ -25,7 +25,7 @@ export type StoredWizardSession = {
 
 export type WizardSessionExport = {
   format: 'klasur-justierer-session';
-  version: 8;
+  version: 9;
   exportedAt: string;
   data: WizardData;
   touchedStepIds: StepId[];
@@ -89,9 +89,7 @@ function createDefaultJustierungData(gradeThresholds: GradeThreshold[]): WizardD
     layout: 'sideBySide',
     resultView: 'chart',
     droppedTaskIndexes: [],
-    gradeThresholds: cloneGradeThresholds(gradeThresholds),
-    reviewer: '',
-    reason: ''
+    gradeThresholds: cloneGradeThresholds(gradeThresholds)
   };
 }
 
@@ -126,12 +124,7 @@ function hasWizardStepData(stepId: StepId, data: WizardData): boolean {
   }
 
   if (stepId === 'justierung') {
-    return (
-      data.justierung.droppedTaskIndexes.length > 0 ||
-      hasAdjustedGradeThresholds(data) ||
-      data.justierung.reviewer.trim().length > 0 ||
-      data.justierung.reason.trim().length > 0
-    );
+    return data.justierung.droppedTaskIndexes.length > 0 || hasAdjustedGradeThresholds(data);
   }
 
   return false;
@@ -415,17 +408,8 @@ function readJustierungData(value: unknown, gradeThresholds: GradeThreshold[]): 
     return null;
   }
 
-  if (
-    isLegacyAdjustmentMethod(value.method) &&
-    isNumberOrNull(value.bonusPoints) &&
-    typeof value.reviewer === 'string' &&
-    typeof value.reason === 'string'
-  ) {
-    return {
-      ...createDefaultJustierungData(gradeThresholds),
-      reviewer: value.reviewer,
-      reason: value.reason
-    };
+  if (isLegacyAdjustmentMethod(value.method)) {
+    return createDefaultJustierungData(gradeThresholds);
   }
 
   const layout = readAdjustmentLayout(value.layout);
@@ -433,14 +417,7 @@ function readJustierungData(value: unknown, gradeThresholds: GradeThreshold[]): 
   const droppedTaskIndexes = readDroppedTaskIndexes(value.droppedTaskIndexes);
   const adjustedGradeThresholds = readAdjustedGradeThresholds(value.gradeThresholds, gradeThresholds);
 
-  if (
-    !layout ||
-    !resultView ||
-    !droppedTaskIndexes ||
-    !adjustedGradeThresholds ||
-    typeof value.reviewer !== 'string' ||
-    typeof value.reason !== 'string'
-  ) {
+  if (!layout || !resultView || !droppedTaskIndexes || !adjustedGradeThresholds) {
     return null;
   }
 
@@ -448,9 +425,7 @@ function readJustierungData(value: unknown, gradeThresholds: GradeThreshold[]): 
     layout,
     resultView,
     droppedTaskIndexes,
-    gradeThresholds: adjustedGradeThresholds,
-    reviewer: value.reviewer,
-    reason: value.reason
+    gradeThresholds: adjustedGradeThresholds
   };
 }
 
@@ -664,7 +639,7 @@ export function createWizardSessionExport(state: WizardState): WizardSessionExpo
 
   return {
     format: 'klasur-justierer-session',
-    version: 8,
+    version: 9,
     exportedAt: new Date().toISOString(),
     data: cloneWizardData(snapshot.data),
     touchedStepIds: [...snapshot.touchedStepIds],

@@ -146,7 +146,7 @@ export class JustierungStepComponent implements OnDestroy {
 
   protected get actionLayoutClass(): string {
     return this.data.layout === 'sideBySide'
-      ? 'grid gap-6 xl:grid-cols-[minmax(18rem,1fr)_minmax(16rem,0.75fr)_minmax(18rem,1fr)] xl:items-start'
+      ? 'grid gap-6 xl:grid-cols-[minmax(18rem,1fr)_minmax(16rem,0.75fr)] xl:items-start'
       : 'space-y-6';
   }
 

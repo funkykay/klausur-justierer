@@ -47,8 +47,6 @@ export type WizardData = {
     resultView: AdjustmentResultView;
     droppedTaskIndexes: number[];
     gradeThresholds: GradeThreshold[];
-    reviewer: string;
-    reason: string;
   };
 };
 
