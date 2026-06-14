@@ -44,21 +44,34 @@
           <div class="flex rounded-lg border border-slate-200 bg-slate-50 p-1 dark:border-slate-800 dark:bg-slate-950">
             <button
               type="button"
-              aria-label="Noten anzeigen"
-              title="Noten anzeigen"
-              [class]="resultViewButtonClass(data.resultView === 'chart')"
-              (click)="setResultView('chart')"
-            >
-              Noten
-            </button>
-            <button
-              type="button"
               aria-label="Teilnehmer anzeigen"
               title="Teilnehmer anzeigen"
               [class]="resultViewButtonClass(data.resultView === 'table')"
               (click)="setResultView('table')"
             >
-              Teilnehmer
+              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16.75 19.25v-1.5A3.75 3.75 0 0 0 13 14H7a3.75 3.75 0 0 0-3.75 3.75v1.5" />
+                <circle cx="10" cy="7" r="3.25" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M18 10.75a2.75 2.75 0 1 0 0-5.5" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M20.75 19.25v-1a3.25 3.25 0 0 0-2.25-3.08" />
+              </svg>
+              <span>Teilnehmer</span>
+            </button>
+            <button
+              type="button"
+              aria-label="Noten anzeigen"
+              title="Noten anzeigen"
+              [class]="resultViewButtonClass(data.resultView === 'chart')"
+              (click)="setResultView('chart')"
+            >
+              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4.75 19.25V4.75" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4.75 19.25h14.5" />
+                <rect x="7" y="11" width="2.75" height="5.5" rx="0.75" />
+                <rect x="11" y="7.5" width="2.75" height="9" rx="0.75" />
+                <rect x="15" y="9.5" width="2.75" height="7" rx="0.75" />
+              </svg>
+              <span>Noten</span>
             </button>
           </div>
         </div>

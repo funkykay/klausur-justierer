@@ -59,7 +59,7 @@ function createInitialData(): WizardData {
     },
     justierung: {
       layout: 'sideBySide',
-      resultView: 'chart',
+      resultView: 'table',
       droppedTaskIndexes: [],
       gradeThresholds: cloneGradeThresholds(gradeThresholds)
     }
