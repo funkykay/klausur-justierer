@@ -21,11 +21,14 @@
     @apply min-h-screen bg-slate-100 font-sans text-slate-950 antialiased dark:bg-slate-950 dark:text-slate-100;
   }
 
-  button,
+  button {
+    @apply text-sm;
+  }
+
   input,
   select,
   textarea {
-    @apply text-sm;
+    @apply text-base;
   }
 }
 
@@ -89,6 +92,10 @@
   .modal-text {
     @apply text-sm text-slate-600 dark:text-slate-400;
   }
+}
+
+.teilnehmer-hot .handsontableInput {
+  font-size: 16px !important;
 }
 
 .dark .teilnehmer-hot .handsontable,

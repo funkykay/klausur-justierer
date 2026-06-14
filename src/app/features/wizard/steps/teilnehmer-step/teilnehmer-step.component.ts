@@ -19,6 +19,16 @@ export class TeilnehmerStepComponent implements AfterViewInit, OnDestroy {
   protected readonly wizard = inject(WizardService);
   private hotTable: Handsontable | null = null;
   private isSyncingGrid = false;
+  private mobileEditSelectionPending = false;
+  private mobileEditTimeout: number | undefined;
+
+  private readonly handleGridPointerDown = (event: PointerEvent): void => {
+    this.mobileEditSelectionPending = event.pointerType === 'touch' || event.pointerType === 'pen';
+  };
+
+  private readonly handleGridTouchStart = (): void => {
+    this.mobileEditSelectionPending = true;
+  };
 
   private readonly gridEffect = effect(() => {
     const state = this.wizard.state();
@@ -60,21 +70,35 @@ export class TeilnehmerStepComponent implements AfterViewInit, OnDestroy {
       return;
     }
 
+    this.gridElement.nativeElement.addEventListener('pointerdown', this.handleGridPointerDown, {
+      passive: true
+    });
+    this.gridElement.nativeElement.addEventListener('touchstart', this.handleGridTouchStart, {
+      passive: true
+    });
+
     this.hotTable = new Handsontable(this.gridElement.nativeElement, {
       data: this.createGridData(),
       colHeaders: this.createColumnHeaders(),
       columns: this.createColumns(),
       rowHeaders: true,
+      rowHeights: this.hasCoarsePointer() ? 44 : undefined,
       height: 'auto',
       stretchH: 'all',
       autoWrapRow: true,
       autoWrapCol: true,
+      enterBeginsEditing: true,
       contextMenu: ['remove_row', 'undo', 'redo'],
       manualColumnResize: true,
       manualRowResize: true,
       themeName: 'ht-theme-main',
       licenseKey: 'non-commercial-and-evaluation',
       cells: (row, column) => this.createCellSettings(row, column),
+      afterSelectionEnd: (row, column, row2, column2) => {
+        if (row === row2 && column === column2) {
+          this.scheduleMobileCellEdit(row, column);
+        }
+      },
       afterChange: (changes, source) => {
         if (!changes || source === 'loadData') {
           return;
@@ -90,6 +114,13 @@ export class TeilnehmerStepComponent implements AfterViewInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.gridEffect.destroy();
+    this.clearMobileEditTimeout();
+
+    if (this.gridElement) {
+      this.gridElement.nativeElement.removeEventListener('pointerdown', this.handleGridPointerDown);
+      this.gridElement.nativeElement.removeEventListener('touchstart', this.handleGridTouchStart);
+    }
+
     this.hotTable?.destroy();
     this.hotTable = null;
   }
@@ -255,6 +286,7 @@ export class TeilnehmerStepComponent implements AfterViewInit, OnDestroy {
     this.hotTable.updateSettings({
       colHeaders: this.createColumnHeaders(),
       columns: this.createColumns(),
+      rowHeights: this.hasCoarsePointer() ? 44 : undefined,
       cells: (row, column) => this.createCellSettings(row, column)
     });
     this.hotTable.loadData(this.createGridData());
@@ -290,5 +322,56 @@ export class TeilnehmerStepComponent implements AfterViewInit, OnDestroy {
     return Object.entries(fieldErrors).flatMap(([field, messages]) =>
       messages.map((message) => `${this.formatErrorField(field)}: ${message}`)
     );
+  }
+
+  private hasCoarsePointer(): boolean {
+    return typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
+  }
+
+  private scheduleMobileCellEdit(row: number, column: number): void {
+    if (!this.hotTable || !this.mobileEditSelectionPending || row < 0 || column < 0) {
+      return;
+    }
+
+    this.mobileEditSelectionPending = false;
+    this.clearMobileEditTimeout();
+
+    this.mobileEditTimeout = window.setTimeout(() => {
+      if (!this.hotTable || this.isSyncingGrid) {
+        return;
+      }
+
+      const selection = this.hotTable.getSelectedLast();
+
+      if (!selection) {
+        return;
+      }
+
+      const [selectedRow, selectedColumn, selectedRow2, selectedColumn2] = selection;
+
+      if (
+        selectedRow !== row ||
+        selectedColumn !== column ||
+        selectedRow2 !== row ||
+        selectedColumn2 !== column
+      ) {
+        return;
+      }
+
+      const editor = this.hotTable.getActiveEditor();
+
+      if (editor && !editor.isOpened()) {
+        editor.beginEditing();
+      }
+    });
+  }
+
+  private clearMobileEditTimeout(): void {
+    if (this.mobileEditTimeout === undefined) {
+      return;
+    }
+
+    window.clearTimeout(this.mobileEditTimeout);
+    this.mobileEditTimeout = undefined;
   }
 }
