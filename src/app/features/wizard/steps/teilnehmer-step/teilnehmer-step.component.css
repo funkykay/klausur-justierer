@@ -31,6 +31,28 @@
   z-index: 2 !important;
 }
 
+:host ::ng-deep .teilnehmer-hot .handsontable td,
+:host ::ng-deep .teilnehmer-hot .handsontable th {
+  touch-action: manipulation;
+}
+
+@media (pointer: coarse) {
+  :host ::ng-deep .teilnehmer-hot .handsontable td,
+  :host ::ng-deep .teilnehmer-hot .handsontable th {
+    height: 2.75rem !important;
+    padding: 0.625rem 0.75rem !important;
+    font-size: 1rem;
+    line-height: 1.5;
+    vertical-align: middle;
+  }
+
+  :host ::ng-deep .teilnehmer-hot .handsontableInput {
+    min-height: 2.75rem !important;
+    padding: 0.625rem 0.75rem !important;
+    font-size: 1rem !important;
+  }
+}
+
 :host ::ng-deep .handsontable td.teilnehmer-grid-error {
   background-color: #fef2f2 !important;
   color: #991b1b;
