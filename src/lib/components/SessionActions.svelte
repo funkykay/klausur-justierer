@@ -13,8 +13,7 @@
 
   type ModalType = 'save' | 'load' | null;
 
-  let importMenuOpen = false;
-  let exportMenuOpen = false;
+  let menuOpen = false;
   let activeModal: ModalType = null;
   let sessionName = '';
   let selectedSessionName = '';
@@ -23,8 +22,7 @@
   let fileInput: HTMLInputElement | null = null;
   let sessionNameInput: HTMLInputElement | null = null;
   let selectedSessionSelect: HTMLSelectElement | null = null;
-  let importMenuElement: HTMLDivElement | null = null;
-  let exportMenuElement: HTMLDivElement | null = null;
+  let menuElement: HTMLDivElement | null = null;
 
   $: canSave = sessionName.trim().length > 0;
   $: canLoad = selectedSessionName.trim().length > 0;
@@ -34,8 +32,7 @@
   }
 
   function closeMenus(): void {
-    importMenuOpen = false;
-    exportMenuOpen = false;
+    menuOpen = false;
   }
 
   function closeModal(): void {
@@ -59,7 +56,7 @@
       return;
     }
 
-    if (!importMenuElement?.contains(target) && !exportMenuElement?.contains(target)) {
+    if (!menuElement?.contains(target)) {
       closeMenus();
     }
   }
@@ -192,96 +189,68 @@
 
 <svelte:window onclick={handleWindowClick} onkeydown={handleWindowKeydown} />
 
-<div class="flex items-center gap-2">
-  <div class="relative" bind:this={importMenuElement}>
-    <button
-      class="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-300 bg-white text-slate-800 shadow-sm transition hover:border-slate-400 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/20"
-      type="button"
-      aria-label="Import"
-      aria-haspopup="menu"
-      aria-expanded={importMenuOpen}
-      onclick={() => {
-        importMenuOpen = !importMenuOpen;
-        exportMenuOpen = false;
-      }}
+<div class="relative" bind:this={menuElement}>
+  <button
+    class="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-300 bg-white text-slate-800 shadow-sm transition hover:border-slate-400 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/20"
+    type="button"
+    aria-label="Aktionen"
+    aria-haspopup="menu"
+    aria-expanded={menuOpen}
+    onclick={() => {
+      menuOpen = !menuOpen;
+    }}
+  >
+    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M4.75 6.75h14.5" />
+      <path stroke-linecap="round" stroke-linejoin="round" d="M4.75 12h14.5" />
+      <path stroke-linecap="round" stroke-linejoin="round" d="M4.75 17.25h14.5" />
+    </svg>
+  </button>
+
+  {#if menuOpen}
+    <div
+      class="absolute right-0 z-30 mt-2 w-52 overflow-hidden rounded-md border border-slate-200 bg-white py-1 text-sm shadow-lg"
+      role="menu"
     >
-      <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v10.5" />
-        <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 9.75 3.75 3.75 3.75-3.75" />
-        <path stroke-linecap="round" stroke-linejoin="round" d="M4.75 14.5v4.75h14.5V14.5" />
-      </svg>
-    </button>
-
-    {#if importMenuOpen}
-      <div
-        class="absolute right-0 z-30 mt-2 w-48 overflow-hidden rounded-md border border-slate-200 bg-white py-1 text-sm shadow-lg"
-        role="menu"
+      <button
+        class="block w-full px-4 py-2 text-left text-slate-800 transition hover:bg-slate-50"
+        type="button"
+        role="menuitem"
+        onclick={openLoadModal}
       >
-        <button
-          class="block w-full px-4 py-2 text-left text-slate-800 transition hover:bg-slate-50"
-          type="button"
-          role="menuitem"
-          onclick={openLoadModal}
-        >
-          Lade Session
-        </button>
+        Lade Session
+      </button>
 
-        <button
-          class="block w-full px-4 py-2 text-left text-slate-800 transition hover:bg-slate-50"
-          type="button"
-          role="menuitem"
-          onclick={openFileImport}
-        >
-          Importiere Datei
-        </button>
-      </div>
-    {/if}
-  </div>
-
-  <div class="relative" bind:this={exportMenuElement}>
-    <button
-      class="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-300 bg-white text-slate-800 shadow-sm transition hover:border-slate-400 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/20"
-      type="button"
-      aria-label="Export"
-      aria-haspopup="menu"
-      aria-expanded={exportMenuOpen}
-      onclick={() => {
-        exportMenuOpen = !exportMenuOpen;
-        importMenuOpen = false;
-      }}
-    >
-      <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M12 14V3.5" />
-        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 7.25 12 3.5l3.75 3.75" />
-        <path stroke-linecap="round" stroke-linejoin="round" d="M4.75 14.5v4.75h14.5V14.5" />
-      </svg>
-    </button>
-
-    {#if exportMenuOpen}
-      <div
-        class="absolute right-0 z-30 mt-2 w-48 overflow-hidden rounded-md border border-slate-200 bg-white py-1 text-sm shadow-lg"
-        role="menu"
+      <button
+        class="block w-full px-4 py-2 text-left text-slate-800 transition hover:bg-slate-50"
+        type="button"
+        role="menuitem"
+        onclick={openFileImport}
       >
-        <button
-          class="block w-full px-4 py-2 text-left text-slate-800 transition hover:bg-slate-50"
-          type="button"
-          role="menuitem"
-          onclick={openSaveModal}
-        >
-          Speichere Session
-        </button>
+        Importiere Datei
+      </button>
 
-        <button
-          class="block w-full px-4 py-2 text-left text-slate-800 transition hover:bg-slate-50"
-          type="button"
-          role="menuitem"
-          onclick={exportFile}
-        >
-          Exportiere Datei
-        </button>
-      </div>
-    {/if}
-  </div>
+      <div class="my-1 border-t border-slate-100"></div>
+
+      <button
+        class="block w-full px-4 py-2 text-left text-slate-800 transition hover:bg-slate-50"
+        type="button"
+        role="menuitem"
+        onclick={openSaveModal}
+      >
+        Speichere Session
+      </button>
+
+      <button
+        class="block w-full px-4 py-2 text-left text-slate-800 transition hover:bg-slate-50"
+        type="button"
+        role="menuitem"
+        onclick={exportFile}
+      >
+        Exportiere Datei
+      </button>
+    </div>
+  {/if}
 </div>
 
 <input class="hidden" type="file" accept="application/json,.json" bind:this={fileInput} onchange={importFile} />
