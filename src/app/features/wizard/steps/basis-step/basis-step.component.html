@@ -1,27 +1,36 @@
-<div class="field-grid">
-  <label>
-    <span class="field-label">Kurs</span>
-    <input
-      class="field-input"
-      [class.field-input-error]="showErrors && errors['course']"
-      type="text"
-      [value]="data.course"
-      (input)="updateBasis('course', textValue($event))"
-      (blur)="wizard.markCurrentTouched()"
-    />
-    <app-field-error [errors]="showErrors ? errors['course'] : undefined" />
-  </label>
+<div class="space-y-6">
+  <div>
+    <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Basisdaten der Klausur</h3>
+    <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">
+      Trage Kurs und Thema ein, damit gespeicherte Sessions und Exporte eindeutig zugeordnet werden können.
+    </p>
+  </div>
 
-  <label>
-    <span class="field-label">Thema</span>
-    <input
-      class="field-input"
-      [class.field-input-error]="showErrors && errors['topic']"
-      type="text"
-      [value]="data.topic"
-      (input)="updateBasis('topic', textValue($event))"
-      (blur)="wizard.markCurrentTouched()"
-    />
-    <app-field-error [errors]="showErrors ? errors['topic'] : undefined" />
-  </label>
+  <div class="field-grid">
+    <label>
+      <span class="field-label">Kurs</span>
+      <input
+        class="field-input"
+        [class.field-input-error]="showErrors && errors['course']"
+        type="text"
+        [value]="data.course"
+        (input)="updateBasis('course', textValue($event))"
+        (blur)="wizard.markCurrentTouched()"
+      />
+      <app-field-error [errors]="showErrors ? errors['course'] : undefined" />
+    </label>
+
+    <label>
+      <span class="field-label">Thema</span>
+      <input
+        class="field-input"
+        [class.field-input-error]="showErrors && errors['topic']"
+        type="text"
+        [value]="data.topic"
+        (input)="updateBasis('topic', textValue($event))"
+        (blur)="wizard.markCurrentTouched()"
+      />
+      <app-field-error [errors]="showErrors ? errors['topic'] : undefined" />
+    </label>
+  </div>
 </div>
