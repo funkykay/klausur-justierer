@@ -1,3 +1,36 @@
+:host {
+  display: block;
+  position: relative;
+  z-index: 0;
+}
+
+.teilnehmer-hot {
+  isolation: isolate;
+  position: relative;
+  z-index: 0;
+}
+
+:host ::ng-deep .teilnehmer-hot .handsontable.ht_master {
+  z-index: 0 !important;
+}
+
+:host ::ng-deep .teilnehmer-hot .handsontable.ht_clone_top,
+:host ::ng-deep .teilnehmer-hot .handsontable.ht_clone_left,
+:host ::ng-deep .teilnehmer-hot .handsontable.ht_clone_inline_start,
+:host ::ng-deep .teilnehmer-hot .handsontable.ht_clone_bottom {
+  z-index: 1 !important;
+}
+
+:host ::ng-deep .teilnehmer-hot .handsontable.ht_clone_top_left_corner,
+:host ::ng-deep .teilnehmer-hot .handsontable.ht_clone_top_inline_start_corner,
+:host ::ng-deep .teilnehmer-hot .handsontable.ht_clone_bottom_left_corner,
+:host
+  ::ng-deep
+  .teilnehmer-hot
+  .handsontable.ht_clone_bottom_inline_start_corner {
+  z-index: 2 !important;
+}
+
 :host ::ng-deep .handsontable td.teilnehmer-grid-error {
   background-color: #fef2f2 !important;
   color: #991b1b;
@@ -16,6 +49,9 @@
 
 :host-context(.dark) ::ng-deep .handsontable td.teilnehmer-grid-error.current,
 :host-context(.dark) ::ng-deep .handsontable td.teilnehmer-grid-error.area,
-:host-context(.dark) ::ng-deep .handsontable td.teilnehmer-grid-error.highlight {
+:host-context(.dark)
+  ::ng-deep
+  .handsontable
+  td.teilnehmer-grid-error.highlight {
   background-color: #7f1d1d !important;
 }
