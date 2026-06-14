@@ -59,6 +59,15 @@ type GradeReviewGroup = {
   rows: ParticipantReviewRow[];
 };
 
+type StatusReviewGroup = {
+  key: 'passed' | 'failed';
+  title: string;
+  failed: boolean;
+  participantCount: number;
+  percent: number;
+  gradeGroups: GradeReviewGroup[];
+};
+
 type GradeDistributionRow = {
   grade: string;
   failed: boolean;
@@ -283,6 +292,18 @@ export class JustierungStepComponent implements OnDestroy {
     });
 
     return [...rows.values()];
+  }
+
+  protected get groupedStatusReviewRows(): StatusReviewGroup[] {
+    const participantCount = this.reviewRows.length;
+    const gradeGroups = this.groupedReviewRows;
+    const passedGradeGroups = gradeGroups.filter((group) => !group.failed);
+    const failedGradeGroups = gradeGroups.filter((group) => group.failed);
+
+    return [
+      this.createStatusReviewGroup('passed', 'Bestanden', false, participantCount, passedGradeGroups),
+      this.createStatusReviewGroup('failed', 'Durchgefallen', true, participantCount, failedGradeGroups)
+    ];
   }
 
   protected get groupedReviewRows(): GradeReviewGroup[] {
@@ -520,10 +541,14 @@ export class JustierungStepComponent implements OnDestroy {
       : 'inline-flex w-fit rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-200';
   }
 
-  gradeGroupHeaderClass(failed: boolean): string {
+  statusGroupHeaderClass(failed: boolean): string {
     return failed
-      ? 'border-t-2 border-red-200 bg-red-50/80 dark:border-red-900 dark:bg-red-950/50'
-      : 'border-t-2 border-emerald-200 bg-emerald-50/80 dark:border-emerald-900 dark:bg-emerald-950/40';
+      ? 'border-t-2 border-red-300 bg-red-100/90 dark:border-red-800 dark:bg-red-950/70'
+      : 'border-t-2 border-emerald-300 bg-emerald-100/90 dark:border-emerald-800 dark:bg-emerald-950/60';
+  }
+
+  gradeGroupHeaderClass(_failed: boolean): string {
+    return 'bg-slate-50 dark:bg-slate-950';
   }
 
   failureDeltaClass(): string {
@@ -600,6 +625,25 @@ export class JustierungStepComponent implements OnDestroy {
     return improves
       ? 'font-semibold text-emerald-700 dark:text-emerald-300'
       : 'font-semibold text-red-700 dark:text-red-300';
+  }
+
+  private createStatusReviewGroup(
+    key: StatusReviewGroup['key'],
+    title: string,
+    failed: boolean,
+    totalParticipantCount: number,
+    gradeGroups: GradeReviewGroup[]
+  ): StatusReviewGroup {
+    const participantCount = gradeGroups.reduce((sum, group) => sum + group.rows.length, 0);
+
+    return {
+      key,
+      title,
+      failed,
+      participantCount,
+      percent: this.calculatePercent(participantCount, totalParticipantCount),
+      gradeGroups
+    };
   }
 
   private createChart(): void {

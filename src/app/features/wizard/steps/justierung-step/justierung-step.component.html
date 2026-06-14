@@ -135,65 +135,76 @@
         </div>
       } @else {
         <div class="mt-6 overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800">
-          <div class="border-b border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400">
-            Nach justierter Note gruppiert, innerhalb der Gruppe nach justiertem Prozentwert sortiert.
-          </div>
 
           <div class="overflow-x-auto">
-            <table class="w-full min-w-[54rem] text-left text-sm">
+            <table class="w-full min-w-[48rem] text-left text-sm">
               <thead class="bg-slate-100 text-xs uppercase tracking-[0.12em] text-slate-500 dark:bg-slate-800 dark:text-slate-400">
                 <tr>
                   <th class="px-3 py-2 font-semibold" rowspan="2">Teilnehmer</th>
-                  <th class="px-3 py-2 text-center font-semibold" colspan="4">Justiert</th>
                 </tr>
                 <tr>
                   <th class="px-3 py-2 text-right font-semibold">Punkte</th>
                   <th class="px-3 py-2 text-right font-semibold">Prozent</th>
                   <th class="px-3 py-2 text-right font-semibold">Note</th>
-                  <th class="px-3 py-2 font-semibold">Status</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-                @for (group of groupedReviewRows; track group.key) {
-                  <tr [class]="gradeGroupHeaderClass(group.failed)">
-                    <td class="px-3 py-2" colspan="5">
+                @for (statusGroup of groupedStatusReviewRows; track statusGroup.key) {
+                  <tr [class]="statusGroupHeaderClass(statusGroup.failed)">
+                    <td class="px-3 py-3" colspan="4">
                       <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                        <div class="flex flex-wrap items-center gap-2">
-                          <span class="text-sm font-semibold text-slate-950 dark:text-slate-100">
-                            Note {{ group.grade }}
-                          </span>
-                          <span [class]="statusClass(group.failed)">{{ statusLabel(group.failed) }}</span>
-                        </div>
+                        <span class="text-base font-semibold text-slate-950 dark:text-slate-100">
+                          {{ statusGroup.title }} · {{ formatPercent(statusGroup.percent) }}
+                        </span>
 
                         <span class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
-                          {{ group.rows.length }} Teilnehmer · Ø {{ formatPercent(group.averageAdjustedPercent) }}
+                          {{ statusGroup.participantCount }} Teilnehmer
                         </span>
                       </div>
                     </td>
                   </tr>
 
-                  @for (row of group.rows; track rowIndex; let rowIndex = $index) {
+                  @if (statusGroup.gradeGroups.length) {
+                    @for (group of statusGroup.gradeGroups; track group.key) {
+                      <tr [class]="gradeGroupHeaderClass(group.failed)">
+                        <td class="px-3 py-2" colspan="4">
+                          <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                            <span class="text-sm font-semibold text-slate-950 dark:text-slate-100">
+                              Note {{ group.grade }}
+                            </span>
+
+                            <span class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
+                              {{ group.rows.length }} Teilnehmer · Ø {{ formatPercent(group.averageAdjustedPercent) }}
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+
+                      @for (row of group.rows; track rowIndex; let rowIndex = $index) {
+                        <tr>
+                          <td class="px-3 py-2 pl-6 font-medium text-slate-900 dark:text-slate-100">{{ row.name }}</td>
+                          <td class="px-3 py-2 text-right">
+                            <span [class]="trendClass(row.trend)">
+                              {{ formatNumberComparison(row.rawPoints, row.adjustedPoints) }}
+                            </span>
+                          </td>
+                          <td class="px-3 py-2 text-right">
+                            <span [class]="trendClass(row.trend)">
+                              {{ formatPercentComparison(row.rawPercent, row.adjustedPercent) }}
+                            </span>
+                          </td>
+                          <td class="px-3 py-2 text-right">
+                            <span [class]="trendClass(row.trend)">
+                              {{ trendSymbol(row.trend) }} {{ row.rawGrade }} → {{ row.adjustedGrade }}
+                            </span>
+                          </td>
+                        </tr>
+                      }
+                    }
+                  } @else {
                     <tr>
-                      <td class="px-3 py-2 pl-6 font-medium text-slate-900 dark:text-slate-100">{{ row.name }}</td>
-                      <td class="px-3 py-2 text-right">
-                        <span [class]="trendClass(row.trend)">
-                          {{ formatNumberComparison(row.rawPoints, row.adjustedPoints) }}
-                        </span>
-                      </td>
-                      <td class="px-3 py-2 text-right">
-                        <span [class]="trendClass(row.trend)">
-                          {{ formatPercentComparison(row.rawPercent, row.adjustedPercent) }}
-                        </span>
-                      </td>
-                      <td class="px-3 py-2 text-right">
-                        <span [class]="trendClass(row.trend)">
-                          {{ trendSymbol(row.trend) }} {{ row.rawGrade }} → {{ row.adjustedGrade }}
-                        </span>
-                      </td>
-                      <td class="px-3 py-2">
-                        <span [class]="trendClass(row.trend)">
-                          {{ statusLabel(row.rawFailed) }} → {{ statusLabel(row.adjustedFailed) }}
-                        </span>
+                      <td class="px-3 py-3 text-sm text-slate-500 dark:text-slate-400" colspan="4">
+                        Keine Teilnehmer
                       </td>
                     </tr>
                   }
