@@ -35,6 +35,10 @@ export class NotenschemaStepComponent {
     return value === '' ? null : Number(value);
   }
 
+  checkboxValue(event: Event): boolean {
+    return (event.currentTarget as HTMLInputElement).checked;
+  }
+
   updateThreshold<K extends keyof GradeThreshold>(index: number, key: K, value: GradeThreshold[K]): void {
     this.wizard.updateData((current) => ({
       ...current,
@@ -59,7 +63,8 @@ export class NotenschemaStepComponent {
           ...current.notenschema.gradeThresholds,
           {
             grade: `${current.notenschema.gradeThresholds.length + 1}`,
-            minPercent: null
+            minPercent: null,
+            failed: false
           }
         ]
       }

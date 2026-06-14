@@ -75,6 +75,44 @@
         </div>
       </div>
 
+      <div class="mt-5 grid gap-3 md:grid-cols-3">
+        <section class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-950">
+          <p class="text-xs font-medium uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
+            Durchgefallen roh
+          </p>
+          <p class="mt-2 text-2xl font-semibold text-slate-950 dark:text-slate-100">
+            {{ formatPercent(failureComparison.rawPercent) }}
+          </p>
+          <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">
+            {{ failureComparison.rawCount }} von {{ failureComparison.participantCount }}
+          </p>
+        </section>
+
+        <section class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-950">
+          <p class="text-xs font-medium uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
+            Durchgefallen justiert
+          </p>
+          <p class="mt-2 text-2xl font-semibold text-slate-950 dark:text-slate-100">
+            {{ formatPercent(failureComparison.adjustedPercent) }}
+          </p>
+          <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">
+            {{ failureComparison.adjustedCount }} von {{ failureComparison.participantCount }}
+          </p>
+        </section>
+
+        <section class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-950">
+          <p class="text-xs font-medium uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
+            Veränderung
+          </p>
+          <p class="mt-2 text-2xl font-semibold" [class]="failureDeltaClass()">
+            {{ formatSignedPercentPoints(failureComparison.deltaPercentPoints) }}
+          </p>
+          <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">
+            {{ failureDeltaLabel() }}
+          </p>
+        </section>
+      </div>
+
       @if (data.resultView === 'chart') {
         <div class="mt-6 h-80">
           <canvas #gradeChart></canvas>
@@ -85,6 +123,7 @@
             <thead class="bg-slate-100 text-xs uppercase tracking-[0.12em] text-slate-500 dark:bg-slate-800 dark:text-slate-400">
               <tr>
                 <th class="px-3 py-2 font-semibold">Note</th>
+                <th class="px-3 py-2 font-semibold">Status</th>
                 <th class="px-3 py-2 text-right font-semibold">Roh</th>
                 <th class="px-3 py-2 text-right font-semibold">Justiert</th>
               </tr>
@@ -93,6 +132,9 @@
               @for (row of gradeDistributionRows; track row.grade) {
                 <tr>
                   <td class="px-3 py-2 font-medium text-slate-900 dark:text-slate-100">{{ row.grade }}</td>
+                  <td class="px-3 py-2">
+                    <span [class]="statusClass(row.failed)">{{ statusLabel(row.failed) }}</span>
+                  </td>
                   <td class="px-3 py-2 text-right text-slate-700 dark:text-slate-300">{{ row.raw }}</td>
                   <td class="px-3 py-2 text-right font-semibold text-slate-950 dark:text-slate-100">{{ row.adjusted }}</td>
                 </tr>
@@ -102,16 +144,18 @@
         </div>
       } @else {
         <div class="mt-6 overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-800">
-          <table class="w-full min-w-[56rem] text-left text-sm">
+          <table class="w-full min-w-[68rem] text-left text-sm">
             <thead class="bg-slate-100 text-xs uppercase tracking-[0.12em] text-slate-500 dark:bg-slate-800 dark:text-slate-400">
               <tr>
                 <th class="px-3 py-2 font-semibold">Teilnehmer</th>
                 <th class="px-3 py-2 text-right font-semibold">Rohpunkte</th>
                 <th class="px-3 py-2 text-right font-semibold">Roh %</th>
                 <th class="px-3 py-2 text-right font-semibold">Eigentliche Note</th>
+                <th class="px-3 py-2 font-semibold">Roh Status</th>
                 <th class="px-3 py-2 text-right font-semibold">Justiert</th>
                 <th class="px-3 py-2 text-right font-semibold">Justiert %</th>
                 <th class="px-3 py-2 text-right font-semibold">Justierte Note</th>
+                <th class="px-3 py-2 font-semibold">Justierter Status</th>
                 <th class="px-3 py-2 text-right font-semibold">Trend</th>
               </tr>
             </thead>
@@ -122,9 +166,15 @@
                   <td class="px-3 py-2 text-right text-slate-700 dark:text-slate-300">{{ formatNumber(row.rawPoints) }}</td>
                   <td class="px-3 py-2 text-right text-slate-700 dark:text-slate-300">{{ formatPercent(row.rawPercent) }}</td>
                   <td class="px-3 py-2 text-right font-semibold text-slate-950 dark:text-slate-100">{{ row.rawGrade }}</td>
+                  <td class="px-3 py-2">
+                    <span [class]="statusClass(row.rawFailed)">{{ statusLabel(row.rawFailed) }}</span>
+                  </td>
                   <td class="px-3 py-2 text-right text-slate-700 dark:text-slate-300">{{ formatNumber(row.adjustedPoints) }}</td>
                   <td class="px-3 py-2 text-right text-slate-700 dark:text-slate-300">{{ formatPercent(row.adjustedPercent) }}</td>
                   <td class="px-3 py-2 text-right font-semibold text-slate-950 dark:text-slate-100">{{ row.adjustedGrade }}</td>
+                  <td class="px-3 py-2">
+                    <span [class]="statusClass(row.adjustedFailed)">{{ statusLabel(row.adjustedFailed) }}</span>
+                  </td>
                   <td class="px-3 py-2 text-right">
                     <span [class]="trendClass(row.trend)">{{ trendSymbol(row.trend) }} {{ trendLabel(row.trend) }}</span>
                   </td>
@@ -184,7 +234,10 @@
                   <span class="block text-sm font-medium text-slate-900 dark:text-slate-100">
                     Note {{ displayText(threshold.grade) }}
                   </span>
-                  <span class="block text-xs text-slate-500 dark:text-slate-400">
+                  <span class="mt-1 inline-flex" [class]="statusClass(threshold.failed)">
+                    {{ statusLabel(threshold.failed) }}
+                  </span>
+                  <span class="mt-1 block text-xs text-slate-500 dark:text-slate-400">
                     Original: {{ formatOptionalPercent(threshold.minPercent) }}
                   </span>
                 </span>

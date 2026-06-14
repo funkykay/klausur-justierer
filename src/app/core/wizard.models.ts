@@ -17,6 +17,7 @@ export type ExamTask = {
 export type GradeThreshold = {
   grade: string;
   minPercent: number | null;
+  failed: boolean;
 };
 
 export type ExamParticipant = {

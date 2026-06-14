@@ -25,12 +25,12 @@ function cloneGradeThresholds(gradeThresholds: GradeThreshold[]): GradeThreshold
 
 function createInitialData(): WizardData {
   const gradeThresholds: GradeThreshold[] = [
-    { grade: '1', minPercent: 92 },
-    { grade: '2', minPercent: 81 },
-    { grade: '3', minPercent: 67 },
-    { grade: '4', minPercent: 50 },
-    { grade: '5', minPercent: 30 },
-    { grade: '6', minPercent: 0 }
+    { grade: '1', minPercent: 92, failed: false },
+    { grade: '2', minPercent: 81, failed: false },
+    { grade: '3', minPercent: 67, failed: false },
+    { grade: '4', minPercent: 50, failed: false },
+    { grade: '5', minPercent: 30, failed: true },
+    { grade: '6', minPercent: 0, failed: true }
   ];
 
   return {
@@ -128,7 +128,8 @@ function normalizeAdjustedGradeThresholds(
 
     return {
       grade: threshold.grade,
-      minPercent: adjustedThreshold ? adjustedThreshold.minPercent : threshold.minPercent
+      minPercent: adjustedThreshold ? adjustedThreshold.minPercent : threshold.minPercent,
+      failed: threshold.failed
     };
   });
 }

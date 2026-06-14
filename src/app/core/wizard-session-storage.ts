@@ -25,7 +25,7 @@ export type StoredWizardSession = {
 
 export type WizardSessionExport = {
   format: 'klasur-justierer-session';
-  version: 9;
+  version: 10;
   exportedAt: string;
   data: WizardData;
   touchedStepIds: StepId[];
@@ -54,6 +54,20 @@ function isAdjustmentResultView(value: unknown): value is AdjustmentResultView {
 
 function isStepId(value: unknown): value is StepId {
   return typeof value === 'string' && STEP_IDS.includes(value as StepId);
+}
+
+function isDefaultFailedGrade(grade: string): boolean {
+  const normalized = grade.trim();
+
+  return normalized === '5' || normalized === '6';
+}
+
+function readGradeThresholdFailed(grade: string, value: unknown): boolean | null {
+  if (value === undefined) {
+    return isDefaultFailedGrade(grade);
+  }
+
+  return typeof value === 'boolean' ? value : null;
 }
 
 function cloneGradeThresholds(gradeThresholds: GradeThreshold[]): GradeThreshold[] {
@@ -255,14 +269,16 @@ function readGradeThresholds(value: unknown, totalPoints: number): GradeThreshol
     }
 
     const minPercent = readGradeThresholdPercent(threshold, totalPoints);
+    const failed = readGradeThresholdFailed(threshold.grade, threshold.failed);
 
-    if (minPercent === undefined) {
+    if (minPercent === undefined || failed === null) {
       return null;
     }
 
     thresholds.push({
       grade: threshold.grade,
-      minPercent
+      minPercent,
+      failed
     });
   }
 
@@ -396,7 +412,17 @@ function readAdjustedGradeThresholds(
     return cloneGradeThresholds(gradeThresholds);
   }
 
-  return readGradeThresholds(value, 0);
+  const adjustedGradeThresholds = readGradeThresholds(value, 0);
+
+  if (!adjustedGradeThresholds) {
+    return null;
+  }
+
+  return gradeThresholds.map((threshold, index) => ({
+    grade: threshold.grade,
+    minPercent: adjustedGradeThresholds[index]?.minPercent ?? threshold.minPercent,
+    failed: threshold.failed
+  }));
 }
 
 function readJustierungData(value: unknown, gradeThresholds: GradeThreshold[]): WizardData['justierung'] | null {
@@ -639,7 +665,7 @@ export function createWizardSessionExport(state: WizardState): WizardSessionExpo
 
   return {
     format: 'klasur-justierer-session',
-    version: 9,
+    version: 10,
     exportedAt: new Date().toISOString(),
     data: cloneWizardData(snapshot.data),
     touchedStepIds: [...snapshot.touchedStepIds],
