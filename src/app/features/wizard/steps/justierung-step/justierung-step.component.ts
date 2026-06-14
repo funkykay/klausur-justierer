@@ -381,6 +381,12 @@ export class JustierungStepComponent implements OnDestroy {
       : 'inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-600 transition hover:bg-white hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-slate-100';
   }
 
+  resultViewButtonClass(active: boolean): string {
+    return active
+      ? 'inline-flex h-8 items-center justify-center rounded-md bg-slate-950 px-3 text-xs font-semibold text-white shadow-sm dark:bg-slate-100 dark:text-slate-950'
+      : 'inline-flex h-8 items-center justify-center rounded-md px-3 text-xs font-semibold text-slate-600 transition hover:bg-white hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-slate-100';
+  }
+
   textValue(event: Event): string {
     return (event.currentTarget as HTMLInputElement | HTMLTextAreaElement).value;
   }

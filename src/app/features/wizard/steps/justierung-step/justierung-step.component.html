@@ -44,32 +44,21 @@
           <div class="flex rounded-lg border border-slate-200 bg-slate-50 p-1 dark:border-slate-800 dark:bg-slate-950">
             <button
               type="button"
-              aria-label="Diagramm anzeigen"
-              title="Diagramm anzeigen"
-              [class]="optionButtonClass(data.resultView === 'chart')"
+              aria-label="Noten anzeigen"
+              title="Noten anzeigen"
+              [class]="resultViewButtonClass(data.resultView === 'chart')"
               (click)="setResultView('chart')"
             >
-              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M5 19V5" />
-                <path stroke-linecap="round" stroke-linejoin="round" d="M5 19h14" />
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 16v-5" />
-                <path stroke-linecap="round" stroke-linejoin="round" d="M13 16V8" />
-                <path stroke-linecap="round" stroke-linejoin="round" d="M17 16v-3" />
-              </svg>
+              Noten
             </button>
             <button
               type="button"
-              aria-label="Tabelle anzeigen"
-              title="Tabelle anzeigen"
-              [class]="optionButtonClass(data.resultView === 'table')"
+              aria-label="Teilnehmer anzeigen"
+              title="Teilnehmer anzeigen"
+              [class]="resultViewButtonClass(data.resultView === 'table')"
               (click)="setResultView('table')"
             >
-              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                <rect x="4" y="5" width="16" height="14" rx="1.5" />
-                <path stroke-linecap="round" d="M4 10h16" />
-                <path stroke-linecap="round" d="M4 14.5h16" />
-                <path stroke-linecap="round" d="M10 5v14" />
-              </svg>
+              Teilnehmer
             </button>
           </div>
         </div>
