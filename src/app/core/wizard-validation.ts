@@ -15,10 +15,6 @@ function isBlank(value: string): boolean {
   return value.trim().length === 0;
 }
 
-function hasPositiveNumber(value: number | null): value is number {
-  return typeof value === 'number' && Number.isFinite(value) && value > 0;
-}
-
 function hasNonNegativeNumber(value: number | null): value is number {
   return typeof value === 'number' && Number.isFinite(value) && value >= 0;
 }
@@ -140,15 +136,51 @@ function validateTeilnehmer(data: WizardData): ValidationResult {
   return createValidationResult(errors);
 }
 
+function hasJustierungChanges(data: WizardData): boolean {
+  return (
+    data.justierung.droppedTaskIndexes.length > 0 ||
+    data.notenschema.gradeThresholds.some((threshold, index) => {
+      const adjustedThreshold = data.justierung.gradeThresholds[index];
+
+      return adjustedThreshold !== undefined && adjustedThreshold.minPercent !== threshold.minPercent;
+    })
+  );
+}
+
 function validateJustierung(data: WizardData): ValidationResult {
   const errors: FieldErrors = {};
   const { justierung } = data;
 
-  if (justierung.method === 'bonus' && !hasPositiveNumber(justierung.bonusPoints)) {
-    addError(errors, 'bonusPoints', 'Bonus muss größer als 0 sein.');
+  if (data.aufgaben.tasks.length > 0 && justierung.droppedTaskIndexes.length >= data.aufgaben.tasks.length) {
+    addError(errors, 'droppedTaskIndexes', 'Mindestens eine Aufgabe muss in der justierten Bewertung bleiben.');
   }
 
-  if (justierung.method !== 'none' && isBlank(justierung.reason)) {
+  justierung.gradeThresholds.forEach((threshold, index) => {
+    if (!hasPercentNumber(threshold.minPercent)) {
+      addError(errors, `gradeThresholds.${index}.minPercent`, 'Prozentwert muss zwischen 0 und 100 liegen.');
+    }
+  });
+
+  for (let index = 1; index < justierung.gradeThresholds.length; index += 1) {
+    const previous = justierung.gradeThresholds[index - 1];
+    const current = justierung.gradeThresholds[index];
+
+    if (
+      hasPercentNumber(previous.minPercent) &&
+      hasPercentNumber(current.minPercent) &&
+      previous.minPercent <= current.minPercent
+    ) {
+      const grade = data.notenschema.gradeThresholds[index]?.grade || 'Diese Note';
+
+      addError(
+        errors,
+        `gradeThresholds.${index}.minPercent`,
+        `${grade} muss unterhalb der vorherigen justierten Schwelle liegen.`
+      );
+    }
+  }
+
+  if (hasJustierungChanges(data) && isBlank(justierung.reason)) {
     addError(errors, 'reason', 'Begründung ist für eine Justierung erforderlich.');
   }
 

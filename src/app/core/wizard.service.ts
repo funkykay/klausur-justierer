@@ -1,6 +1,7 @@
 import { computed, Injectable, signal } from '@angular/core';
 import type {
   ExamParticipant,
+  GradeThreshold,
   StepId,
   WizardData,
   WizardSessionSnapshot,
@@ -16,7 +17,22 @@ import {
   validateTeilnehmer
 } from './wizard-validation';
 
+function cloneGradeThresholds(gradeThresholds: GradeThreshold[]): GradeThreshold[] {
+  return gradeThresholds.map((threshold) => ({
+    ...threshold
+  }));
+}
+
 function createInitialData(): WizardData {
+  const gradeThresholds: GradeThreshold[] = [
+    { grade: '1', minPercent: 92 },
+    { grade: '2', minPercent: 81 },
+    { grade: '3', minPercent: 67 },
+    { grade: '4', minPercent: 50 },
+    { grade: '5', minPercent: 30 },
+    { grade: '6', minPercent: 0 }
+  ];
+
   return {
     basis: {
       topic: '',
@@ -31,14 +47,7 @@ function createInitialData(): WizardData {
       ]
     },
     notenschema: {
-      gradeThresholds: [
-        { grade: '1', minPercent: 92 },
-        { grade: '2', minPercent: 81 },
-        { grade: '3', minPercent: 67 },
-        { grade: '4', minPercent: 50 },
-        { grade: '5', minPercent: 30 },
-        { grade: '6', minPercent: 0 }
-      ]
+      gradeThresholds
     },
     teilnehmer: {
       participants: [
@@ -49,8 +58,10 @@ function createInitialData(): WizardData {
       ]
     },
     justierung: {
-      method: 'none',
-      bonusPoints: null,
+      layout: 'sideBySide',
+      resultView: 'chart',
+      droppedTaskIndexes: [],
+      gradeThresholds: cloneGradeThresholds(gradeThresholds),
       reviewer: '',
       reason: ''
     }
@@ -104,6 +115,26 @@ function createSteps(): WizardStep[] {
   ];
 }
 
+function normalizeDroppedTaskIndexes(droppedTaskIndexes: number[], taskCount: number): number[] {
+  return Array.from(new Set(droppedTaskIndexes))
+    .filter((index) => Number.isInteger(index) && index >= 0 && index < taskCount)
+    .sort((left, right) => left - right);
+}
+
+function normalizeAdjustedGradeThresholds(
+  gradeThresholds: GradeThreshold[],
+  adjustedGradeThresholds: GradeThreshold[]
+): GradeThreshold[] {
+  return gradeThresholds.map((threshold, index) => {
+    const adjustedThreshold = adjustedGradeThresholds[index];
+
+    return {
+      grade: threshold.grade,
+      minPercent: adjustedThreshold ? adjustedThreshold.minPercent : threshold.minPercent
+    };
+  });
+}
+
 function normalizeData(data: WizardData): WizardData {
   const taskCount = data.aufgaben.tasks.length;
   const participants =
@@ -118,6 +149,14 @@ function normalizeData(data: WizardData): WizardData {
         ...participant,
         pointsByTask: Array.from({ length: taskCount }, (_, index) => participant.pointsByTask[index] ?? 0)
       }))
+    },
+    justierung: {
+      ...data.justierung,
+      droppedTaskIndexes: normalizeDroppedTaskIndexes(data.justierung.droppedTaskIndexes, taskCount),
+      gradeThresholds: normalizeAdjustedGradeThresholds(
+        data.notenschema.gradeThresholds,
+        data.justierung.gradeThresholds
+      )
     }
   };
 }

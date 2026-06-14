@@ -24,6 +24,10 @@ export type ExamParticipant = {
   pointsByTask: (number | null)[];
 };
 
+export type AdjustmentLayout = 'sideBySide' | 'stacked';
+
+export type AdjustmentResultView = 'chart' | 'table';
+
 export type WizardData = {
   basis: {
     topic: string;
@@ -39,8 +43,10 @@ export type WizardData = {
     participants: ExamParticipant[];
   };
   justierung: {
-    method: 'none' | 'bonus' | 'linear';
-    bonusPoints: number | null;
+    layout: AdjustmentLayout;
+    resultView: AdjustmentResultView;
+    droppedTaskIndexes: number[];
+    gradeThresholds: GradeThreshold[];
     reviewer: string;
     reason: string;
   };

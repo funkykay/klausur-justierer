@@ -1,4 +1,6 @@
 import type {
+  AdjustmentLayout,
+  AdjustmentResultView,
   ExamParticipant,
   ExamTask,
   GradeThreshold,
@@ -11,6 +13,8 @@ import type {
 const STORAGE_KEY = 'klasur-justierer:sessions';
 const STEP_IDS: StepId[] = ['basis', 'aufgaben', 'notenschema', 'teilnehmer', 'justierung'];
 
+type LegacyAdjustmentMethod = 'none' | 'bonus' | 'linear';
+
 export type StoredWizardSession = {
   name: string;
   savedAt: string;
@@ -21,7 +25,7 @@ export type StoredWizardSession = {
 
 export type WizardSessionExport = {
   format: 'klasur-justierer-session';
-  version: 7;
+  version: 8;
   exportedAt: string;
   data: WizardData;
   touchedStepIds: StepId[];
@@ -36,12 +40,26 @@ function isNumberOrNull(value: unknown): value is number | null {
   return value === null || (typeof value === 'number' && Number.isFinite(value));
 }
 
-function isMethod(value: unknown): value is WizardData['justierung']['method'] {
+function isLegacyAdjustmentMethod(value: unknown): value is LegacyAdjustmentMethod {
   return value === 'none' || value === 'bonus' || value === 'linear';
+}
+
+function isAdjustmentLayout(value: unknown): value is AdjustmentLayout {
+  return value === 'sideBySide' || value === 'stacked';
+}
+
+function isAdjustmentResultView(value: unknown): value is AdjustmentResultView {
+  return value === 'chart' || value === 'table';
 }
 
 function isStepId(value: unknown): value is StepId {
   return typeof value === 'string' && STEP_IDS.includes(value as StepId);
+}
+
+function cloneGradeThresholds(gradeThresholds: GradeThreshold[]): GradeThreshold[] {
+  return gradeThresholds.map((threshold) => ({
+    ...threshold
+  }));
 }
 
 function createDefaultAufgabenData(): WizardData['aufgaben'] {
@@ -64,6 +82,25 @@ function createDefaultTeilnehmerData(taskCount: number): WizardData['teilnehmer'
       }
     ]
   };
+}
+
+function createDefaultJustierungData(gradeThresholds: GradeThreshold[]): WizardData['justierung'] {
+  return {
+    layout: 'sideBySide',
+    resultView: 'chart',
+    droppedTaskIndexes: [],
+    gradeThresholds: cloneGradeThresholds(gradeThresholds),
+    reviewer: '',
+    reason: ''
+  };
+}
+
+function hasAdjustedGradeThresholds(data: WizardData): boolean {
+  return data.notenschema.gradeThresholds.some((threshold, index) => {
+    const adjustedThreshold = data.justierung.gradeThresholds[index];
+
+    return adjustedThreshold !== undefined && adjustedThreshold.minPercent !== threshold.minPercent;
+  });
 }
 
 function hasWizardStepData(stepId: StepId, data: WizardData): boolean {
@@ -90,8 +127,8 @@ function hasWizardStepData(stepId: StepId, data: WizardData): boolean {
 
   if (stepId === 'justierung') {
     return (
-      data.justierung.method !== 'none' ||
-      data.justierung.bonusPoints !== null ||
+      data.justierung.droppedTaskIndexes.length > 0 ||
+      hasAdjustedGradeThresholds(data) ||
       data.justierung.reviewer.trim().length > 0 ||
       data.justierung.reason.trim().length > 0
     );
@@ -318,14 +355,89 @@ function readTeilnehmerData(value: unknown, taskCount: number): WizardData['teil
   };
 }
 
-function readJustierungData(value: unknown): WizardData['justierung'] | null {
+function readAdjustmentLayout(value: unknown): AdjustmentLayout | null {
+  if (value === undefined) {
+    return 'sideBySide';
+  }
+
+  return isAdjustmentLayout(value) ? value : null;
+}
+
+function readAdjustmentResultView(value: unknown): AdjustmentResultView | null {
+  if (value === undefined) {
+    return 'chart';
+  }
+
+  return isAdjustmentResultView(value) ? value : null;
+}
+
+function readDroppedTaskIndexes(value: unknown): number[] | null {
+  if (value === undefined) {
+    return [];
+  }
+
+  if (!Array.isArray(value)) {
+    return null;
+  }
+
+  const indexes: number[] = [];
+
+  for (const item of value) {
+    if (typeof item !== 'number' || !Number.isInteger(item) || item < 0) {
+      return null;
+    }
+
+    if (!indexes.includes(item)) {
+      indexes.push(item);
+    }
+  }
+
+  return indexes.sort((left, right) => left - right);
+}
+
+function readAdjustedGradeThresholds(
+  value: unknown,
+  gradeThresholds: GradeThreshold[]
+): GradeThreshold[] | null {
+  if (value === undefined) {
+    return cloneGradeThresholds(gradeThresholds);
+  }
+
+  return readGradeThresholds(value, 0);
+}
+
+function readJustierungData(value: unknown, gradeThresholds: GradeThreshold[]): WizardData['justierung'] | null {
+  if (value === undefined) {
+    return createDefaultJustierungData(gradeThresholds);
+  }
+
   if (!isRecord(value)) {
     return null;
   }
 
   if (
-    !isMethod(value.method) ||
-    !isNumberOrNull(value.bonusPoints) ||
+    isLegacyAdjustmentMethod(value.method) &&
+    isNumberOrNull(value.bonusPoints) &&
+    typeof value.reviewer === 'string' &&
+    typeof value.reason === 'string'
+  ) {
+    return {
+      ...createDefaultJustierungData(gradeThresholds),
+      reviewer: value.reviewer,
+      reason: value.reason
+    };
+  }
+
+  const layout = readAdjustmentLayout(value.layout);
+  const resultView = readAdjustmentResultView(value.resultView);
+  const droppedTaskIndexes = readDroppedTaskIndexes(value.droppedTaskIndexes);
+  const adjustedGradeThresholds = readAdjustedGradeThresholds(value.gradeThresholds, gradeThresholds);
+
+  if (
+    !layout ||
+    !resultView ||
+    !droppedTaskIndexes ||
+    !adjustedGradeThresholds ||
     typeof value.reviewer !== 'string' ||
     typeof value.reason !== 'string'
   ) {
@@ -333,8 +445,10 @@ function readJustierungData(value: unknown): WizardData['justierung'] | null {
   }
 
   return {
-    method: value.method,
-    bonusPoints: value.bonusPoints,
+    layout,
+    resultView,
+    droppedTaskIndexes,
+    gradeThresholds: adjustedGradeThresholds,
     reviewer: value.reviewer,
     reason: value.reason
   };
@@ -355,9 +469,14 @@ function readWizardData(value: unknown): WizardData | null {
   const totalPoints = calculateTotalPoints(aufgaben.tasks);
   const notenschema = readNotenschemaData(value.notenschema, totalPoints);
   const teilnehmer = readTeilnehmerData(value.teilnehmer, aufgaben.tasks.length);
-  const justierung = readJustierungData(value.justierung);
 
-  if (!notenschema || !teilnehmer || !justierung) {
+  if (!notenschema || !teilnehmer) {
+    return null;
+  }
+
+  const justierung = readJustierungData(value.justierung, notenschema.gradeThresholds);
+
+  if (!justierung) {
     return null;
   }
 
@@ -429,9 +548,7 @@ function cloneWizardData(data: WizardData): WizardData {
       }))
     },
     notenschema: {
-      gradeThresholds: data.notenschema.gradeThresholds.map((threshold) => ({
-        ...threshold
-      }))
+      gradeThresholds: cloneGradeThresholds(data.notenschema.gradeThresholds)
     },
     teilnehmer: {
       participants: data.teilnehmer.participants.map((participant) => ({
@@ -440,7 +557,9 @@ function cloneWizardData(data: WizardData): WizardData {
       }))
     },
     justierung: {
-      ...data.justierung
+      ...data.justierung,
+      droppedTaskIndexes: [...data.justierung.droppedTaskIndexes],
+      gradeThresholds: cloneGradeThresholds(data.justierung.gradeThresholds)
     }
   };
 }
@@ -545,7 +664,7 @@ export function createWizardSessionExport(state: WizardState): WizardSessionExpo
 
   return {
     format: 'klasur-justierer-session',
-    version: 7,
+    version: 8,
     exportedAt: new Date().toISOString(),
     data: cloneWizardData(snapshot.data),
     touchedStepIds: [...snapshot.touchedStepIds],
