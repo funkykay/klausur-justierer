@@ -144,9 +144,9 @@ export class JustierungStepComponent implements OnDestroy {
       });
   }
 
-  protected get layoutClass(): string {
+  protected get actionLayoutClass(): string {
     return this.data.layout === 'sideBySide'
-      ? 'grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(22rem,0.65fr)]'
+      ? 'grid gap-6 xl:grid-cols-[minmax(18rem,1fr)_minmax(16rem,0.75fr)_minmax(18rem,1fr)] xl:items-start'
       : 'space-y-6';
   }
 

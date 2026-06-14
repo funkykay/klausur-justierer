@@ -34,37 +34,13 @@
     </section>
   } @else {
     <section class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-        <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Ansicht</h3>
+      <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+        <div>
+          <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ resultTitle }}</h3>
+          <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{ adjustmentSummary }}</p>
+        </div>
 
-        <div class="flex flex-wrap gap-3">
-          <div class="flex rounded-lg border border-slate-200 bg-slate-50 p-1 dark:border-slate-800 dark:bg-slate-950">
-            <button
-              type="button"
-              aria-label="Nebeneinander anzeigen"
-              title="Nebeneinander anzeigen"
-              [class]="optionButtonClass(data.layout === 'sideBySide')"
-              (click)="setLayout('sideBySide')"
-            >
-              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                <rect x="4" y="5" width="6.5" height="14" rx="1.5" />
-                <rect x="13.5" y="5" width="6.5" height="14" rx="1.5" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              aria-label="Übereinander anzeigen"
-              title="Übereinander anzeigen"
-              [class]="optionButtonClass(data.layout === 'stacked')"
-              (click)="setLayout('stacked')"
-            >
-              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                <rect x="5" y="4" width="14" height="6.5" rx="1.5" />
-                <rect x="5" y="13.5" width="14" height="6.5" rx="1.5" />
-              </svg>
-            </button>
-          </div>
-
+        <div class="flex flex-wrap items-center gap-3">
           <div class="flex rounded-lg border border-slate-200 bg-slate-50 p-1 dark:border-slate-800 dark:bg-slate-950">
             <button
               type="button"
@@ -96,87 +72,112 @@
               </svg>
             </button>
           </div>
-        </div>
-      </div>
-    </section>
-
-    <div [class]="layoutClass">
-      <section class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-          <div>
-            <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ resultTitle }}</h3>
-            <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{ adjustmentSummary }}</p>
-          </div>
 
           <span class="inline-flex w-fit rounded-full bg-gradient-to-r from-violet-600 via-fuchsia-500 to-amber-400 px-3 py-1 text-xs font-semibold text-white shadow-sm">
             Roh vs. justiert
           </span>
         </div>
+      </div>
 
-        @if (data.resultView === 'chart') {
-          <div class="mt-6 h-80">
-            <canvas #gradeChart></canvas>
-          </div>
+      @if (data.resultView === 'chart') {
+        <div class="mt-6 h-80">
+          <canvas #gradeChart></canvas>
+        </div>
 
-          <div class="mt-5 overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800">
-            <table class="w-full text-left text-sm">
-              <thead class="bg-slate-100 text-xs uppercase tracking-[0.12em] text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+        <div class="mt-5 overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-slate-100 text-xs uppercase tracking-[0.12em] text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+              <tr>
+                <th class="px-3 py-2 font-semibold">Note</th>
+                <th class="px-3 py-2 text-right font-semibold">Roh</th>
+                <th class="px-3 py-2 text-right font-semibold">Justiert</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+              @for (row of gradeDistributionRows; track row.grade) {
                 <tr>
-                  <th class="px-3 py-2 font-semibold">Note</th>
-                  <th class="px-3 py-2 text-right font-semibold">Roh</th>
-                  <th class="px-3 py-2 text-right font-semibold">Justiert</th>
+                  <td class="px-3 py-2 font-medium text-slate-900 dark:text-slate-100">{{ row.grade }}</td>
+                  <td class="px-3 py-2 text-right text-slate-700 dark:text-slate-300">{{ row.raw }}</td>
+                  <td class="px-3 py-2 text-right font-semibold text-slate-950 dark:text-slate-100">{{ row.adjusted }}</td>
                 </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-                @for (row of gradeDistributionRows; track row.grade) {
-                  <tr>
-                    <td class="px-3 py-2 font-medium text-slate-900 dark:text-slate-100">{{ row.grade }}</td>
-                    <td class="px-3 py-2 text-right text-slate-700 dark:text-slate-300">{{ row.raw }}</td>
-                    <td class="px-3 py-2 text-right font-semibold text-slate-950 dark:text-slate-100">{{ row.adjusted }}</td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        } @else {
-          <div class="mt-6 overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-800">
-            <table class="w-full min-w-[56rem] text-left text-sm">
-              <thead class="bg-slate-100 text-xs uppercase tracking-[0.12em] text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <div class="mt-6 overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-800">
+          <table class="w-full min-w-[56rem] text-left text-sm">
+            <thead class="bg-slate-100 text-xs uppercase tracking-[0.12em] text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+              <tr>
+                <th class="px-3 py-2 font-semibold">Teilnehmer</th>
+                <th class="px-3 py-2 text-right font-semibold">Rohpunkte</th>
+                <th class="px-3 py-2 text-right font-semibold">Roh %</th>
+                <th class="px-3 py-2 text-right font-semibold">Eigentliche Note</th>
+                <th class="px-3 py-2 text-right font-semibold">Justiert</th>
+                <th class="px-3 py-2 text-right font-semibold">Justiert %</th>
+                <th class="px-3 py-2 text-right font-semibold">Justierte Note</th>
+                <th class="px-3 py-2 text-right font-semibold">Trend</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+              @for (row of reviewRows; track index; let index = $index) {
                 <tr>
-                  <th class="px-3 py-2 font-semibold">Teilnehmer</th>
-                  <th class="px-3 py-2 text-right font-semibold">Rohpunkte</th>
-                  <th class="px-3 py-2 text-right font-semibold">Roh %</th>
-                  <th class="px-3 py-2 text-right font-semibold">Eigentliche Note</th>
-                  <th class="px-3 py-2 text-right font-semibold">Justiert</th>
-                  <th class="px-3 py-2 text-right font-semibold">Justiert %</th>
-                  <th class="px-3 py-2 text-right font-semibold">Justierte Note</th>
-                  <th class="px-3 py-2 text-right font-semibold">Trend</th>
+                  <td class="px-3 py-2 font-medium text-slate-900 dark:text-slate-100">{{ row.name }}</td>
+                  <td class="px-3 py-2 text-right text-slate-700 dark:text-slate-300">{{ formatNumber(row.rawPoints) }}</td>
+                  <td class="px-3 py-2 text-right text-slate-700 dark:text-slate-300">{{ formatPercent(row.rawPercent) }}</td>
+                  <td class="px-3 py-2 text-right font-semibold text-slate-950 dark:text-slate-100">{{ row.rawGrade }}</td>
+                  <td class="px-3 py-2 text-right text-slate-700 dark:text-slate-300">{{ formatNumber(row.adjustedPoints) }}</td>
+                  <td class="px-3 py-2 text-right text-slate-700 dark:text-slate-300">{{ formatPercent(row.adjustedPercent) }}</td>
+                  <td class="px-3 py-2 text-right font-semibold text-slate-950 dark:text-slate-100">{{ row.adjustedGrade }}</td>
+                  <td class="px-3 py-2 text-right">
+                    <span [class]="trendClass(row.trend)">{{ trendSymbol(row.trend) }} {{ trendLabel(row.trend) }}</span>
+                  </td>
                 </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-                @for (row of reviewRows; track index; let index = $index) {
-                  <tr>
-                    <td class="px-3 py-2 font-medium text-slate-900 dark:text-slate-100">{{ row.name }}</td>
-                    <td class="px-3 py-2 text-right text-slate-700 dark:text-slate-300">{{ formatNumber(row.rawPoints) }}</td>
-                    <td class="px-3 py-2 text-right text-slate-700 dark:text-slate-300">{{ formatPercent(row.rawPercent) }}</td>
-                    <td class="px-3 py-2 text-right font-semibold text-slate-950 dark:text-slate-100">{{ row.rawGrade }}</td>
-                    <td class="px-3 py-2 text-right text-slate-700 dark:text-slate-300">{{ formatNumber(row.adjustedPoints) }}</td>
-                    <td class="px-3 py-2 text-right text-slate-700 dark:text-slate-300">{{ formatPercent(row.adjustedPercent) }}</td>
-                    <td class="px-3 py-2 text-right font-semibold text-slate-950 dark:text-slate-100">{{ row.adjustedGrade }}</td>
-                    <td class="px-3 py-2 text-right">
-                      <span [class]="trendClass(row.trend)">{{ trendSymbol(row.trend) }} {{ trendLabel(row.trend) }}</span>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        }
-      </section>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
 
-      <section class="space-y-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+    <section class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+        <div>
+          <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Justieroptionen</h3>
+          <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">
+            Passe den Notenschlüssel an, streiche Aufgaben und dokumentiere die Änderung.
+          </p>
+        </div>
 
+        <div class="flex rounded-lg border border-slate-200 bg-slate-50 p-1 dark:border-slate-800 dark:bg-slate-950">
+          <button
+            type="button"
+            aria-label="Horizontal anzeigen"
+            title="Horizontal anzeigen"
+            [class]="optionButtonClass(data.layout === 'sideBySide')"
+            (click)="setLayout('sideBySide')"
+          >
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <rect x="4" y="5" width="6.5" height="14" rx="1.5" />
+              <rect x="13.5" y="5" width="6.5" height="14" rx="1.5" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            aria-label="Vertikal anzeigen"
+            title="Vertikal anzeigen"
+            [class]="optionButtonClass(data.layout === 'stacked')"
+            (click)="setLayout('stacked')"
+          >
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <rect x="5" y="4" width="14" height="6.5" rx="1.5" />
+              <rect x="5" y="13.5" width="14" height="6.5" rx="1.5" />
+            </svg>
+          </button>
+        </div>
+      </div>
 
+      <div class="mt-6" [class]="actionLayoutClass">
         <section>
           <h4 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Notenschlüssel anpassen</h4>
 
@@ -273,7 +274,7 @@
             </label>
           </div>
         </section>
-      </section>
-    </div>
+      </div>
+    </section>
   }
 </div>
