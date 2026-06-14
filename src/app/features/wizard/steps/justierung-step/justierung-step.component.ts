@@ -176,7 +176,7 @@ export class JustierungStepComponent implements OnDestroy {
   }
 
   protected get resultTitle(): string {
-    return this.data.resultView === 'chart' ? 'Notenverteilung' : 'Teilnehmervergleich';
+    return 'Justiert';
   }
 
   protected get rawTotalPoints(): number {
@@ -427,6 +427,18 @@ export class JustierungStepComponent implements OnDestroy {
     return `${this.percentFormatter.format(value)} %`;
   }
 
+  formatCountComparison(before: number, after: number): string {
+    return `${before} → ${after}`;
+  }
+
+  formatNumberComparison(before: number, after: number): string {
+    return `${this.formatNumber(before)} → ${this.formatNumber(after)}`;
+  }
+
+  formatPercentComparison(before: number, after: number): string {
+    return `${this.formatPercent(before)} → ${this.formatPercent(after)}`;
+  }
+
   formatSignedPercentPoints(value: number): string {
     const sign = value > 0 ? '+' : '';
 
@@ -515,6 +527,18 @@ export class JustierungStepComponent implements OnDestroy {
     return 'gleich';
   }
 
+  distributionComparisonClass(row: GradeDistributionRow): string {
+    if (row.adjusted === row.raw) {
+      return 'font-medium text-slate-500 dark:text-slate-400';
+    }
+
+    const improves = row.failed ? row.adjusted < row.raw : row.adjusted > row.raw;
+
+    return improves
+      ? 'font-semibold text-emerald-700 dark:text-emerald-300'
+      : 'font-semibold text-red-700 dark:text-red-300';
+  }
+
   private createChart(): void {
     if (!this.chartCanvas) {
       return;
@@ -527,7 +551,7 @@ export class JustierungStepComponent implements OnDestroy {
         labels: [],
         datasets: [
           {
-            label: 'Roh',
+            label: 'Vorher',
             data: [],
             backgroundColor: 'rgba(71, 85, 105, 0.72)',
             borderColor: 'rgb(51, 65, 85)',
