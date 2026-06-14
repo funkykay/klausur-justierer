@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostListener, ViewChild, inject } from '@angular/core';
+import { Component, ElementRef, HostListener, OnInit, ViewChild, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { appSettings } from '../../../../core/app-settings';
 import { ThemeService } from '../../../../core/theme.service';
@@ -14,7 +14,35 @@ import {
 } from '../../../../core/wizard-session-storage';
 import { WizardService } from '../../../../core/wizard.service';
 
-type ModalType = 'save' | 'load' | 'impressum' | 'datenschutz' | null;
+type ModalType = 'welcome' | 'save' | 'load' | 'impressum' | 'datenschutz' | null;
+
+const WELCOME_DIALOG_STORAGE_KEY = 'klasur-justierer:welcome-dialog-on-visit';
+
+function readWelcomeDialogOnVisit(): boolean {
+  if (typeof localStorage === 'undefined') {
+    return false;
+  }
+
+  try {
+    const value = localStorage.getItem(WELCOME_DIALOG_STORAGE_KEY);
+
+    return value === null ? true : value === 'true';
+  } catch {
+    return true;
+  }
+}
+
+function writeWelcomeDialogOnVisit(openOnVisit: boolean): void {
+  if (typeof localStorage === 'undefined') {
+    return;
+  }
+
+  try {
+    localStorage.setItem(WELCOME_DIALOG_STORAGE_KEY, String(openOnVisit));
+  } catch {
+    return;
+  }
+}
 
 @Component({
   selector: 'app-session-actions',
@@ -22,7 +50,7 @@ type ModalType = 'save' | 'load' | 'impressum' | 'datenschutz' | null;
   imports: [FormsModule],
   templateUrl: './session-actions.component.html'
 })
-export class SessionActionsComponent {
+export class SessionActionsComponent implements OnInit {
   private readonly wizardService = inject(WizardService);
 
   @ViewChild('fileInput') private fileInput: ElementRef<HTMLInputElement> | undefined;
@@ -40,6 +68,7 @@ export class SessionActionsComponent {
   protected selectedSessionName = '';
   protected sessions: StoredWizardSession[] = [];
   protected fileError = '';
+  protected welcomeDialogOnVisit = readWelcomeDialogOnVisit();
 
   protected get canSave(): boolean {
     return this.sessionName.trim().length > 0;
@@ -47,6 +76,12 @@ export class SessionActionsComponent {
 
   protected get canLoad(): boolean {
     return this.selectedSessionName.trim().length > 0;
+  }
+
+  ngOnInit(): void {
+    if (this.welcomeDialogOnVisit) {
+      this.activeModal = 'welcome';
+    }
   }
 
   @HostListener('document:click', ['$event'])
@@ -101,6 +136,16 @@ export class SessionActionsComponent {
 
   checkboxValue(event: Event): boolean {
     return (event.currentTarget as HTMLInputElement).checked;
+  }
+
+  setWelcomeDialogOnVisit(openOnVisit: boolean): void {
+    this.welcomeDialogOnVisit = openOnVisit;
+    writeWelcomeDialogOnVisit(openOnVisit);
+  }
+
+  openWelcomeModal(): void {
+    this.closeMenus();
+    this.activeModal = 'welcome';
   }
 
   openSaveModal(): void {
