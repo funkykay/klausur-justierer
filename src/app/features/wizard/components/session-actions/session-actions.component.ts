@@ -1,5 +1,6 @@
 import { Component, ElementRef, HostListener, ViewChild, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { appSettings } from '../../../../core/app-settings';
 import {
   createWizardSessionExport,
   createWizardSessionFilename,
@@ -27,6 +28,7 @@ export class SessionActionsComponent {
   @ViewChild('selectedSessionSelect') private selectedSessionSelect: ElementRef<HTMLSelectElement> | undefined;
   @ViewChild('menuElement') private menuElement: ElementRef<HTMLDivElement> | undefined;
 
+  protected readonly settings = appSettings;
   protected readonly wizard = this.wizardService.state;
   protected menuOpen = false;
   protected activeModal: ModalType = null;

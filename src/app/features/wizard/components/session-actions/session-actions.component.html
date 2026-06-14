@@ -1,83 +1,99 @@
-<div class="relative" #menuElement>
-  <button
+<div class="flex items-center gap-2" #menuElement>
+  <a
     class="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-300 bg-white text-slate-800 shadow-sm transition hover:border-slate-400 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/20"
-    type="button"
-    aria-label="Aktionen"
-    aria-haspopup="menu"
-    [attr.aria-expanded]="menuOpen"
-    (click)="menuOpen = !menuOpen"
+    [href]="settings.githubRepositoryUrl"
+    target="_blank"
+    rel="noopener noreferrer"
+    aria-label="GitHub Repository öffnen"
   >
-    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-      <path stroke-linecap="round" stroke-linejoin="round" d="M4.75 6.75h14.5" />
-      <path stroke-linecap="round" stroke-linejoin="round" d="M4.75 12h14.5" />
-      <path stroke-linecap="round" stroke-linejoin="round" d="M4.75 17.25h14.5" />
+    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path
+        d="M12 2C6.48 2 2 6.59 2 12.25c0 4.53 2.87 8.37 6.84 9.73.5.09.68-.22.68-.49 0-.24-.01-.88-.01-1.73-2.78.62-3.37-1.37-3.37-1.37-.45-1.18-1.11-1.5-1.11-1.5-.91-.64.07-.63.07-.63 1 .07 1.53 1.06 1.53 1.06.89 1.56 2.34 1.11 2.91.85.09-.66.35-1.11.63-1.37-2.22-.26-4.56-1.14-4.56-5.06 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.71 0 0 .84-.28 2.75 1.05A9.31 9.31 0 0 1 12 7c.85 0 1.7.12 2.5.34 1.91-1.33 2.75-1.05 2.75-1.05.55 1.41.2 2.45.1 2.71.64.72 1.03 1.63 1.03 2.75 0 3.93-2.34 4.79-4.57 5.05.36.32.68.94.68 1.9 0 1.37-.01 2.47-.01 2.81 0 .27.18.59.69.49A10.17 10.17 0 0 0 22 12.25C22 6.59 17.52 2 12 2Z"
+      />
     </svg>
-  </button>
+  </a>
 
-  @if (menuOpen) {
-    <div
-      class="absolute right-0 z-30 mt-2 w-52 overflow-hidden rounded-md border border-slate-200 bg-white py-1 text-sm shadow-lg"
-      role="menu"
+  <div class="relative">
+    <button
+      class="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-300 bg-white text-slate-800 shadow-sm transition hover:border-slate-400 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/20"
+      type="button"
+      aria-label="Aktionen"
+      aria-haspopup="menu"
+      [attr.aria-expanded]="menuOpen"
+      (click)="menuOpen = !menuOpen"
     >
-      <button
-        class="block w-full px-4 py-2 text-left text-slate-800 transition hover:bg-slate-50"
-        type="button"
-        role="menuitem"
-        (click)="openLoadModal()"
+      <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4.75 6.75h14.5" />
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4.75 12h14.5" />
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4.75 17.25h14.5" />
+      </svg>
+    </button>
+
+    @if (menuOpen) {
+      <div
+        class="absolute right-0 z-30 mt-2 w-52 overflow-hidden rounded-md border border-slate-200 bg-white py-1 text-sm shadow-lg"
+        role="menu"
       >
-        Lade Session
-      </button>
+        <button
+          class="block w-full px-4 py-2 text-left text-slate-800 transition hover:bg-slate-50"
+          type="button"
+          role="menuitem"
+          (click)="openLoadModal()"
+        >
+          Lade Session
+        </button>
 
-      <button
-        class="block w-full px-4 py-2 text-left text-slate-800 transition hover:bg-slate-50"
-        type="button"
-        role="menuitem"
-        (click)="openFileImport()"
-      >
-        Importiere Datei
-      </button>
+        <button
+          class="block w-full px-4 py-2 text-left text-slate-800 transition hover:bg-slate-50"
+          type="button"
+          role="menuitem"
+          (click)="openFileImport()"
+        >
+          Importiere Datei
+        </button>
 
-      <div class="my-1 border-t border-slate-100"></div>
+        <div class="my-1 border-t border-slate-100"></div>
 
-      <button
-        class="block w-full px-4 py-2 text-left text-slate-800 transition hover:bg-slate-50"
-        type="button"
-        role="menuitem"
-        (click)="openSaveModal()"
-      >
-        Speichere Session
-      </button>
+        <button
+          class="block w-full px-4 py-2 text-left text-slate-800 transition hover:bg-slate-50"
+          type="button"
+          role="menuitem"
+          (click)="openSaveModal()"
+        >
+          Speichere Session
+        </button>
 
-      <button
-        class="block w-full px-4 py-2 text-left text-slate-800 transition hover:bg-slate-50"
-        type="button"
-        role="menuitem"
-        (click)="exportFile()"
-      >
-        Exportiere Datei
-      </button>
+        <button
+          class="block w-full px-4 py-2 text-left text-slate-800 transition hover:bg-slate-50"
+          type="button"
+          role="menuitem"
+          (click)="exportFile()"
+        >
+          Exportiere Datei
+        </button>
 
-      <div class="my-1 border-t border-slate-100"></div>
+        <div class="my-1 border-t border-slate-100"></div>
 
-      <button
-        class="block w-full px-4 py-2 text-left text-slate-800 transition hover:bg-slate-50"
-        type="button"
-        role="menuitem"
-        (click)="openImpressumModal()"
-      >
-        Impressum
-      </button>
+        <button
+          class="block w-full px-4 py-2 text-left text-slate-800 transition hover:bg-slate-50"
+          type="button"
+          role="menuitem"
+          (click)="openImpressumModal()"
+        >
+          Impressum
+        </button>
 
-      <button
-        class="block w-full px-4 py-2 text-left text-slate-800 transition hover:bg-slate-50"
-        type="button"
-        role="menuitem"
-        (click)="openDatenschutzModal()"
-      >
-        Datenschutzerklärung
-      </button>
-    </div>
-  }
+        <button
+          class="block w-full px-4 py-2 text-left text-slate-800 transition hover:bg-slate-50"
+          type="button"
+          role="menuitem"
+          (click)="openDatenschutzModal()"
+        >
+          Datenschutzerklärung
+        </button>
+      </div>
+    }
+  </div>
 </div>
 
 <input #fileInput class="hidden" type="file" accept="application/json,.json" (change)="importFile($event)" />
