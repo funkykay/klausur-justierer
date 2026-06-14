@@ -46,7 +46,17 @@ type ParticipantReviewRow = {
   adjustedPercent: number;
   adjustedGrade: string;
   adjustedFailed: boolean;
+  adjustedRank: number;
   trend: AdjustmentTrend;
+};
+
+type GradeReviewGroup = {
+  key: string;
+  grade: string;
+  failed: boolean;
+  rank: number;
+  averageAdjustedPercent: number;
+  rows: ParticipantReviewRow[];
 };
 
 type GradeDistributionRow = {
@@ -98,6 +108,10 @@ export class JustierungStepComponent implements OnDestroy {
   private readonly theme = inject(ThemeService);
   private chartCanvas: ElementRef<HTMLCanvasElement> | undefined;
   private chart: Chart<'bar', number[], string> | null = null;
+  private readonly collator = new Intl.Collator('de-DE', {
+    numeric: true,
+    sensitivity: 'base'
+  });
   private readonly numberFormatter = new Intl.NumberFormat('de-DE', {
     maximumFractionDigits: 2
   });
@@ -271,6 +285,42 @@ export class JustierungStepComponent implements OnDestroy {
     return [...rows.values()];
   }
 
+  protected get groupedReviewRows(): GradeReviewGroup[] {
+    const groups = new Map<string, Omit<GradeReviewGroup, 'averageAdjustedPercent'>>();
+
+    this.reviewRows.forEach((row) => {
+      const key = `${row.adjustedRank}:${row.adjustedGrade}:${row.adjustedFailed}`;
+
+      if (!groups.has(key)) {
+        groups.set(key, {
+          key,
+          grade: row.adjustedGrade,
+          failed: row.adjustedFailed,
+          rank: row.adjustedRank,
+          rows: []
+        });
+      }
+
+      groups.get(key)!.rows.push(row);
+    });
+
+    return [...groups.values()]
+      .map((group) => {
+        const rows = [...group.rows].sort((left, right) => this.compareReviewRows(left, right));
+
+        return {
+          ...group,
+          rows,
+          averageAdjustedPercent: this.calculateAverageAdjustedPercent(rows)
+        };
+      })
+      .sort((left, right) => {
+        const rankComparison = this.compareRanks(left.rank, right.rank);
+
+        return rankComparison !== 0 ? rankComparison : this.collator.compare(left.grade, right.grade);
+      });
+  }
+
   protected get reviewRows(): ParticipantReviewRow[] {
     return this.participants.map((participant, index) => {
       const rawPoints = this.calculateRawPoints(participant);
@@ -290,6 +340,7 @@ export class JustierungStepComponent implements OnDestroy {
         adjustedPercent,
         adjustedGrade: adjustedAssessment.grade,
         adjustedFailed: adjustedAssessment.failed,
+        adjustedRank: adjustedAssessment.rank,
         trend: this.trendForAssessments(rawAssessment, adjustedAssessment)
       };
     });
@@ -461,6 +512,12 @@ export class JustierungStepComponent implements OnDestroy {
     return failed
       ? 'inline-flex w-fit rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-950 dark:text-red-200'
       : 'inline-flex w-fit rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-200';
+  }
+
+  gradeGroupHeaderClass(failed: boolean): string {
+    return failed
+      ? 'border-t-2 border-red-200 bg-red-50/80 dark:border-red-900 dark:bg-red-950/50'
+      : 'border-t-2 border-emerald-200 bg-emerald-50/80 dark:border-emerald-900 dark:bg-emerald-950/40';
   }
 
   failureDeltaClass(): string {
@@ -654,6 +711,14 @@ export class JustierungStepComponent implements OnDestroy {
     return (points / totalPoints) * 100;
   }
 
+  private calculateAverageAdjustedPercent(rows: ParticipantReviewRow[]): number {
+    if (rows.length === 0) {
+      return 0;
+    }
+
+    return rows.reduce((sum, row) => sum + row.adjustedPercent, 0) / rows.length;
+  }
+
   private assessGradeForPercent(percent: number, gradeThresholds: GradeThreshold[]): GradeAssessment {
     const threshold = gradeThresholds
       .filter((item) => item.minPercent !== null)
@@ -692,6 +757,44 @@ export class JustierungStepComponent implements OnDestroy {
     }
 
     return adjustedAssessment.rank < rawAssessment.rank ? 'better' : 'worse';
+  }
+
+  private compareRanks(left: number, right: number): number {
+    if (Number.isFinite(left) && Number.isFinite(right)) {
+      return left - right;
+    }
+
+    if (Number.isFinite(left)) {
+      return -1;
+    }
+
+    if (Number.isFinite(right)) {
+      return 1;
+    }
+
+    return 0;
+  }
+
+  private compareReviewRows(left: ParticipantReviewRow, right: ParticipantReviewRow): number {
+    const rankComparison = this.compareRanks(left.adjustedRank, right.adjustedRank);
+
+    if (rankComparison !== 0) {
+      return rankComparison;
+    }
+
+    const adjustedPercentComparison = right.adjustedPercent - left.adjustedPercent;
+
+    if (adjustedPercentComparison !== 0) {
+      return adjustedPercentComparison;
+    }
+
+    const rawPercentComparison = right.rawPercent - left.rawPercent;
+
+    if (rawPercentComparison !== 0) {
+      return rawPercentComparison;
+    }
+
+    return this.collator.compare(left.name, right.name);
   }
 
   private collectStepValidationMessages(stepId: StepId, fieldErrors: FieldErrors): string[] {
