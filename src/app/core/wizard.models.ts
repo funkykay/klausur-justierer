@@ -25,8 +25,6 @@ export type ExamParticipant = {
   pointsByTask: (number | null)[];
 };
 
-export type AdjustmentLayout = 'sideBySide' | 'stacked';
-
 export type AdjustmentResultView = 'chart' | 'table';
 
 export type WizardData = {
@@ -44,7 +42,6 @@ export type WizardData = {
     participants: ExamParticipant[];
   };
   justierung: {
-    layout: AdjustmentLayout;
     resultView: AdjustmentResultView;
     droppedTaskIndexes: number[];
     gradeThresholds: GradeThreshold[];

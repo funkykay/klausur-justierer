@@ -230,43 +230,14 @@
     </section>
 
     <section class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-        <div>
-          <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Justieroptionen</h3>
-          <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">
-            Passe den Notenschlüssel an und streiche Aufgaben.
-          </p>
-        </div>
-
-        <div class="flex rounded-lg border border-slate-200 bg-slate-50 p-1 dark:border-slate-800 dark:bg-slate-950">
-          <button
-            type="button"
-            aria-label="Horizontal anzeigen"
-            title="Horizontal anzeigen"
-            [class]="optionButtonClass(data.layout === 'sideBySide')"
-            (click)="setLayout('sideBySide')"
-          >
-            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-              <rect x="4" y="5" width="6.5" height="14" rx="1.5" />
-              <rect x="13.5" y="5" width="6.5" height="14" rx="1.5" />
-            </svg>
-          </button>
-          <button
-            type="button"
-            aria-label="Vertikal anzeigen"
-            title="Vertikal anzeigen"
-            [class]="optionButtonClass(data.layout === 'stacked')"
-            (click)="setLayout('stacked')"
-          >
-            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-              <rect x="5" y="4" width="14" height="6.5" rx="1.5" />
-              <rect x="5" y="13.5" width="14" height="6.5" rx="1.5" />
-            </svg>
-          </button>
-        </div>
+      <div>
+        <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Justieroptionen</h3>
+        <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">
+          Passe den Notenschlüssel an und streiche Aufgaben.
+        </p>
       </div>
 
-      <div class="mt-6" [class]="actionLayoutClass">
+      <div class="mt-6 grid gap-6 xl:grid-cols-[minmax(18rem,1fr)_minmax(16rem,0.75fr)] xl:items-start">
         <section>
           <h4 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Notenschlüssel anpassen</h4>
 

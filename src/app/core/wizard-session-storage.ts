@@ -1,5 +1,4 @@
 import type {
-  AdjustmentLayout,
   AdjustmentResultView,
   ExamParticipant,
   ExamTask,
@@ -25,7 +24,7 @@ export type StoredWizardSession = {
 
 export type WizardSessionExport = {
   format: 'klasur-justierer-session';
-  version: 10;
+  version: 11;
   exportedAt: string;
   data: WizardData;
   touchedStepIds: StepId[];
@@ -42,10 +41,6 @@ function isNumberOrNull(value: unknown): value is number | null {
 
 function isLegacyAdjustmentMethod(value: unknown): value is LegacyAdjustmentMethod {
   return value === 'none' || value === 'bonus' || value === 'linear';
-}
-
-function isAdjustmentLayout(value: unknown): value is AdjustmentLayout {
-  return value === 'sideBySide' || value === 'stacked';
 }
 
 function isAdjustmentResultView(value: unknown): value is AdjustmentResultView {
@@ -100,7 +95,6 @@ function createDefaultTeilnehmerData(taskCount: number): WizardData['teilnehmer'
 
 function createDefaultJustierungData(gradeThresholds: GradeThreshold[]): WizardData['justierung'] {
   return {
-    layout: 'sideBySide',
     resultView: 'chart',
     droppedTaskIndexes: [],
     gradeThresholds: cloneGradeThresholds(gradeThresholds)
@@ -364,14 +358,6 @@ function readTeilnehmerData(value: unknown, taskCount: number): WizardData['teil
   };
 }
 
-function readAdjustmentLayout(value: unknown): AdjustmentLayout | null {
-  if (value === undefined) {
-    return 'sideBySide';
-  }
-
-  return isAdjustmentLayout(value) ? value : null;
-}
-
 function readAdjustmentResultView(value: unknown): AdjustmentResultView | null {
   if (value === undefined) {
     return 'chart';
@@ -438,17 +424,15 @@ function readJustierungData(value: unknown, gradeThresholds: GradeThreshold[]): 
     return createDefaultJustierungData(gradeThresholds);
   }
 
-  const layout = readAdjustmentLayout(value.layout);
   const resultView = readAdjustmentResultView(value.resultView);
   const droppedTaskIndexes = readDroppedTaskIndexes(value.droppedTaskIndexes);
   const adjustedGradeThresholds = readAdjustedGradeThresholds(value.gradeThresholds, gradeThresholds);
 
-  if (!layout || !resultView || !droppedTaskIndexes || !adjustedGradeThresholds) {
+  if (!resultView || !droppedTaskIndexes || !adjustedGradeThresholds) {
     return null;
   }
 
   return {
-    layout,
     resultView,
     droppedTaskIndexes,
     gradeThresholds: adjustedGradeThresholds
@@ -665,7 +649,7 @@ export function createWizardSessionExport(state: WizardState): WizardSessionExpo
 
   return {
     format: 'klasur-justierer-session',
-    version: 10,
+    version: 11,
     exportedAt: new Date().toISOString(),
     data: cloneWizardData(snapshot.data),
     touchedStepIds: [...snapshot.touchedStepIds],
