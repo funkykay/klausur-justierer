@@ -2,6 +2,7 @@ import { Component, ElementRef, HostListener, ViewChild, inject } from '@angular
 import { FormsModule } from '@angular/forms';
 import { appSettings } from '../../../../core/app-settings';
 import { ThemeService } from '../../../../core/theme.service';
+import { ViewWidthService } from '../../../../core/view-width.service';
 import {
   createWizardSessionExport,
   createWizardSessionFilename,
@@ -31,6 +32,7 @@ export class SessionActionsComponent {
 
   protected readonly settings = appSettings;
   protected readonly theme = inject(ThemeService);
+  protected readonly viewWidth = inject(ViewWidthService);
   protected readonly wizard = this.wizardService.state;
   protected menuOpen = false;
   protected activeModal: ModalType = null;
@@ -95,6 +97,10 @@ export class SessionActionsComponent {
     return [this.wizard().data.basis.course.trim(), this.wizard().data.basis.topic.trim()]
       .filter((value) => value.length > 0)
       .join(' ');
+  }
+
+  checkboxValue(event: Event): boolean {
+    return (event.currentTarget as HTMLInputElement).checked;
   }
 
   openSaveModal(): void {

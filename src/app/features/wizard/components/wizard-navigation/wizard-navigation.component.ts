@@ -1,4 +1,5 @@
 import { Component, inject } from '@angular/core';
+import { ViewWidthService } from '../../../../core/view-width.service';
 import { WizardService } from '../../../../core/wizard.service';
 
 @Component({
@@ -8,6 +9,7 @@ import { WizardService } from '../../../../core/wizard.service';
 })
 export class WizardNavigationComponent {
   protected readonly wizard = inject(WizardService);
+  protected readonly viewWidth = inject(ViewWidthService);
   protected readonly isFirst = this.wizard.isFirst;
   protected readonly isLast = this.wizard.isLast;
 }

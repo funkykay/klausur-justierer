@@ -1,5 +1,9 @@
 <footer class="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200 bg-white/95 px-4 py-3 shadow-lg backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
-  <div class="mx-auto flex max-w-6xl items-center justify-between gap-3">
+  <div
+    class="mx-auto flex items-center justify-between gap-3"
+    [class.max-w-6xl]="!viewWidth.isWide()"
+    [class.max-w-screen-2xl]="viewWidth.isWide()"
+  >
     <button class="button-secondary" type="button" [disabled]="isFirst()" (click)="wizard.previous()">
       Zurück
     </button>
