@@ -56,6 +56,26 @@
       >
         Exportiere Datei
       </button>
+
+      <div class="my-1 border-t border-slate-100"></div>
+
+      <button
+        class="block w-full px-4 py-2 text-left text-slate-800 transition hover:bg-slate-50"
+        type="button"
+        role="menuitem"
+        (click)="openImpressumModal()"
+      >
+        Impressum
+      </button>
+
+      <button
+        class="block w-full px-4 py-2 text-left text-slate-800 transition hover:bg-slate-50"
+        type="button"
+        role="menuitem"
+        (click)="openDatenschutzModal()"
+      >
+        Datenschutzerklärung
+      </button>
     </div>
   }
 </div>
@@ -143,6 +163,113 @@
           <button class="button-primary" type="submit" [disabled]="!canLoad">Laden</button>
         </div>
       </form>
+    </div>
+  </div>
+}
+
+@if (activeModal === 'impressum') {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4"
+    role="presentation"
+    (click)="closeModalOnBackdrop($event)"
+  >
+    <div
+      class="w-full max-w-md rounded-lg border border-slate-200 bg-white p-5 shadow-xl"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="impressum-title"
+    >
+      <h2 id="impressum-title" class="text-lg font-semibold text-slate-950">Impressum</h2>
+
+      <div class="mt-4 space-y-4 text-sm text-slate-700">
+        <section>
+          <h3 class="font-semibold text-slate-900">Betreiber</h3>
+          <p class="mt-1">
+            Kay Donner<br />
+            Ludwigstraße 9<br />
+            38106 Braunschweig
+          </p>
+        </section>
+
+        <section>
+          <h3 class="font-semibold text-slate-900">Verantwortlich für den Inhalt</h3>
+          <p class="mt-1">
+            Kay Donner<br />
+            Ludwigstraße 9<br />
+            38106 Braunschweig
+          </p>
+        </section>
+      </div>
+
+      <div class="mt-6 flex justify-end">
+        <button class="button-primary" type="button" (click)="closeModal()">Schließen</button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (activeModal === 'datenschutz') {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4"
+    role="presentation"
+    (click)="closeModalOnBackdrop($event)"
+  >
+    <div
+      class="max-h-[calc(100vh-4rem)] w-full max-w-2xl overflow-y-auto rounded-lg border border-slate-200 bg-white p-5 shadow-xl"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="datenschutz-title"
+    >
+      <h2 id="datenschutz-title" class="text-lg font-semibold text-slate-950">Datenschutzerklärung</h2>
+
+      <div class="mt-4 space-y-4 text-sm text-slate-700">
+        <section>
+          <h3 class="font-semibold text-slate-900">Verantwortlicher</h3>
+          <p class="mt-1">
+            Kay Donner<br />
+            Ludwigstraße 9<br />
+            38106 Braunschweig
+          </p>
+        </section>
+
+        <section>
+          <h3 class="font-semibold text-slate-900">Keine Datenerhebung durch diese Anwendung</h3>
+          <p class="mt-1">
+            Diese Anwendung erhebt und übermittelt keine personenbezogenen Daten an den Betreiber.
+            Eingegebene Inhalte werden nur lokal im Browser verarbeitet.
+          </p>
+        </section>
+
+        <section>
+          <h3 class="font-semibold text-slate-900">Lokale Speicherung</h3>
+          <p class="mt-1">
+            Wenn Sessions gespeichert werden, legt die Anwendung die eingegebenen Daten ausschließlich im Local Storage
+            des verwendeten Browsers ab. Diese Daten bleiben auf dem Gerät und können über die Browserdaten für diese
+            Website gelöscht werden.
+          </p>
+        </section>
+
+        <section>
+          <h3 class="font-semibold text-slate-900">Import und Export</h3>
+          <p class="mt-1">
+            Beim Import und Export von JSON-Dateien werden die ausgewählten Dateien lokal im Browser verarbeitet.
+            Es findet keine Übermittlung dieser Dateien an den Betreiber statt.
+          </p>
+        </section>
+
+        <section>
+          <h3 class="font-semibold text-slate-900">Technischer Betrieb</h3>
+          <p class="mt-1">
+            Beim Aufruf der Webseite können durch den technischen Betrieb des Hostings Verbindungsdaten wie IP-Adresse,
+            Zeitpunkt des Zugriffs oder Browserinformationen verarbeitet werden. Dem Betreiber liegen hierzu keine
+            weitergehenden Informationen vor.
+          </p>
+        </section>
+      </div>
+
+      <div class="mt-6 flex justify-end">
+        <button class="button-primary" type="button" (click)="closeModal()">Schließen</button>
+      </div>
     </div>
   </div>
 }

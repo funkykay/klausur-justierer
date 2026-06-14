@@ -11,7 +11,7 @@ import {
 } from '../../../../core/wizard-session-storage';
 import { WizardService } from '../../../../core/wizard.service';
 
-type ModalType = 'save' | 'load' | null;
+type ModalType = 'save' | 'load' | 'impressum' | 'datenschutz' | null;
 
 @Component({
   selector: 'app-session-actions',
@@ -107,6 +107,16 @@ export class SessionActionsComponent {
     this.selectedSessionName = this.sessions[0]?.name ?? '';
     this.activeModal = 'load';
     window.setTimeout(() => this.selectedSessionSelect?.nativeElement.focus());
+  }
+
+  openImpressumModal(): void {
+    this.closeMenus();
+    this.activeModal = 'impressum';
+  }
+
+  openDatenschutzModal(): void {
+    this.closeMenus();
+    this.activeModal = 'datenschutz';
   }
 
   saveSession(): void {
