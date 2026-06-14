@@ -1,233 +1,268 @@
 <div class="space-y-8">
-  <section class="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
-    <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-      <div>
-        <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Begutachtung</h3>
-        <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">
-          Prüfe die erfassten Daten und die daraus berechnete Bewertung vor der finalen Justierung.
-        </p>
+  @if (!canAdjust) {
+    <section class="rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950">
+      <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div>
+          <h3 class="text-sm font-semibold text-amber-900 dark:text-amber-100">Justierung noch nicht möglich</h3>
+          <p class="mt-1 text-sm text-amber-800 dark:text-amber-200">
+            Alle vorherigen Schritte wurden geprüft. Erledige die folgenden Punkte, bevor du die Bewertung justierst.
+          </p>
+        </div>
+
+        <span class="inline-flex w-fit rounded-full bg-amber-600 px-3 py-1 text-xs font-semibold text-white shadow-sm">
+          Vorprüfung offen
+        </span>
       </div>
 
-      <span class="inline-flex w-fit rounded-full bg-gradient-to-r from-violet-600 via-fuchsia-500 to-amber-400 px-3 py-1 text-xs font-semibold text-white shadow-sm">
-        {{ adjustmentLabel }}
-      </span>
-    </div>
+      <div class="mt-5 space-y-3">
+        @for (issue of prerequisiteIssues; track issue.stepId) {
+          <section class="rounded-lg border border-amber-200 bg-white px-4 py-3 dark:border-amber-900 dark:bg-slate-900">
+            <h4 class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ issue.title }}</h4>
 
-    <div class="mt-5 grid gap-3 md:grid-cols-4">
-      <div class="rounded-lg border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
-        <p class="text-xs font-medium uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Kurs</p>
-        <p class="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">{{ displayText(basis.course) }}</p>
-      </div>
-
-      <div class="rounded-lg border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
-        <p class="text-xs font-medium uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Thema</p>
-        <p class="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">{{ displayText(basis.topic) }}</p>
-      </div>
-
-      <div class="rounded-lg border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
-        <p class="text-xs font-medium uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Aufgaben</p>
-        <p class="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
-          {{ tasks.length }} · {{ formatNumber(totalPoints) }} Punkte
-        </p>
-      </div>
-
-      <div class="rounded-lg border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
-        <p class="text-xs font-medium uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Teilnehmer</p>
-        <p class="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">{{ participants.length }}</p>
-      </div>
-    </div>
-
-    <div class="mt-6 grid gap-6 xl:grid-cols-2">
-      <div>
-        <h4 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Aufgaben</h4>
-
-        <div class="mt-2 overflow-hidden rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-          <table class="w-full text-left text-sm">
-            <thead class="bg-slate-100 text-xs uppercase tracking-[0.12em] text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-              <tr>
-                <th class="px-3 py-2 font-semibold">Aufgabe</th>
-                <th class="px-3 py-2 text-right font-semibold">Punkte</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-              @for (task of tasks; track index; let index = $index) {
-                <tr>
-                  <td class="px-3 py-2 text-slate-800 dark:text-slate-200">{{ displayText(task.name) }}</td>
-                  <td class="px-3 py-2 text-right font-medium text-slate-900 dark:text-slate-100">
-                    {{ formatOptionalNumber(task.maxPoints) }}
-                  </td>
-                </tr>
+            <ul class="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700 dark:text-slate-300">
+              @for (message of issue.messages; track message) {
+                <li>{{ message }}</li>
               }
-            </tbody>
-          </table>
+            </ul>
+          </section>
+        }
+      </div>
+
+      <button class="button-primary mt-5" type="button" (click)="goToFirstInvalidPrerequisite()">
+        Offenen Schritt bearbeiten
+      </button>
+    </section>
+  } @else {
+    <section class="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
+      <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div>
+          <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Begutachtung</h3>
+          <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">
+            Prüfe die erfassten Daten und die daraus berechnete Bewertung vor der finalen Justierung.
+          </p>
+        </div>
+
+        <span class="inline-flex w-fit rounded-full bg-gradient-to-r from-violet-600 via-fuchsia-500 to-amber-400 px-3 py-1 text-xs font-semibold text-white shadow-sm">
+          {{ adjustmentLabel }}
+        </span>
+      </div>
+
+      <div class="mt-5 grid gap-3 md:grid-cols-4">
+        <div class="rounded-lg border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
+          <p class="text-xs font-medium uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Kurs</p>
+          <p class="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">{{ displayText(basis.course) }}</p>
+        </div>
+
+        <div class="rounded-lg border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
+          <p class="text-xs font-medium uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Thema</p>
+          <p class="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">{{ displayText(basis.topic) }}</p>
+        </div>
+
+        <div class="rounded-lg border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
+          <p class="text-xs font-medium uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Aufgaben</p>
+          <p class="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
+            {{ tasks.length }} · {{ formatNumber(totalPoints) }} Punkte
+          </p>
+        </div>
+
+        <div class="rounded-lg border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
+          <p class="text-xs font-medium uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Teilnehmer</p>
+          <p class="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">{{ participants.length }}</p>
         </div>
       </div>
 
-      <div>
-        <h4 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Notenschlüssel</h4>
+      <div class="mt-6 grid gap-6 xl:grid-cols-2">
+        <div>
+          <h4 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Aufgaben</h4>
 
-        <div class="mt-2 overflow-hidden rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-          <table class="w-full text-left text-sm">
-            <thead class="bg-slate-100 text-xs uppercase tracking-[0.12em] text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-              <tr>
-                <th class="px-3 py-2 font-semibold">Note</th>
-                <th class="px-3 py-2 text-right font-semibold">Ab Prozent</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-              @for (threshold of gradeThresholds; track index; let index = $index) {
+          <div class="mt-2 overflow-hidden rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+            <table class="w-full text-left text-sm">
+              <thead class="bg-slate-100 text-xs uppercase tracking-[0.12em] text-slate-500 dark:bg-slate-800 dark:text-slate-400">
                 <tr>
-                  <td class="px-3 py-2 text-slate-800 dark:text-slate-200">{{ displayText(threshold.grade) }}</td>
-                  <td class="px-3 py-2 text-right font-medium text-slate-900 dark:text-slate-100">
-                    {{ formatOptionalPercent(threshold.minPercent) }}
-                  </td>
+                  <th class="px-3 py-2 font-semibold">Aufgabe</th>
+                  <th class="px-3 py-2 text-right font-semibold">Punkte</th>
                 </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <div class="mt-6">
-      <h4 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Bewertung</h4>
-
-      <div class="mt-2 overflow-x-auto rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-        <table class="w-full min-w-[48rem] text-left text-sm">
-          <thead class="bg-slate-100 text-xs uppercase tracking-[0.12em] text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-            <tr>
-              <th class="px-3 py-2 font-semibold">Teilnehmer</th>
-              @for (task of tasks; track index; let index = $index) {
-                <th class="px-3 py-2 text-right font-semibold">{{ displayText(task.name) }}</th>
-              }
-              <th class="px-3 py-2 text-right font-semibold">Roh</th>
-              <th class="px-3 py-2 text-right font-semibold">Justiert</th>
-              <th class="px-3 py-2 text-right font-semibold">Prozent</th>
-              <th class="px-3 py-2 text-right font-semibold">Note</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-            @for (row of reviewRows; track index; let index = $index) {
-              <tr>
-                <td class="px-3 py-2 font-medium text-slate-900 dark:text-slate-100">{{ row.name }}</td>
-                @for (points of row.pointsByTask; track taskIndex; let taskIndex = $index) {
-                  <td class="px-3 py-2 text-right text-slate-700 dark:text-slate-300">
-                    {{ formatOptionalNumber(points) }}
-                  </td>
+              </thead>
+              <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                @for (task of tasks; track index; let index = $index) {
+                  <tr>
+                    <td class="px-3 py-2 text-slate-800 dark:text-slate-200">{{ displayText(task.name) }}</td>
+                    <td class="px-3 py-2 text-right font-medium text-slate-900 dark:text-slate-100">
+                      {{ formatOptionalNumber(task.maxPoints) }}
+                    </td>
+                  </tr>
                 }
-                <td class="px-3 py-2 text-right font-medium text-slate-900 dark:text-slate-100">
-                  {{ formatNumber(row.rawPoints) }}
-                </td>
-                <td class="px-3 py-2 text-right font-semibold text-slate-950 dark:text-slate-100">
-                  {{ formatNumber(row.adjustedPoints) }}
-                </td>
-                <td class="px-3 py-2 text-right font-medium text-slate-900 dark:text-slate-100">
-                  {{ formatPercent(row.percent) }}
-                </td>
-                <td class="px-3 py-2 text-right font-semibold text-slate-950 dark:text-slate-100">{{ row.grade }}</td>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div>
+          <h4 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Notenschlüssel</h4>
+
+          <div class="mt-2 overflow-hidden rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+            <table class="w-full text-left text-sm">
+              <thead class="bg-slate-100 text-xs uppercase tracking-[0.12em] text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                <tr>
+                  <th class="px-3 py-2 font-semibold">Note</th>
+                  <th class="px-3 py-2 text-right font-semibold">Ab Prozent</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                @for (threshold of gradeThresholds; track index; let index = $index) {
+                  <tr>
+                    <td class="px-3 py-2 text-slate-800 dark:text-slate-200">{{ displayText(threshold.grade) }}</td>
+                    <td class="px-3 py-2 text-right font-medium text-slate-900 dark:text-slate-100">
+                      {{ formatOptionalPercent(threshold.minPercent) }}
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-6">
+        <h4 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Bewertung</h4>
+
+        <div class="mt-2 overflow-x-auto rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+          <table class="w-full min-w-[48rem] text-left text-sm">
+            <thead class="bg-slate-100 text-xs uppercase tracking-[0.12em] text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+              <tr>
+                <th class="px-3 py-2 font-semibold">Teilnehmer</th>
+                @for (task of tasks; track index; let index = $index) {
+                  <th class="px-3 py-2 text-right font-semibold">{{ displayText(task.name) }}</th>
+                }
+                <th class="px-3 py-2 text-right font-semibold">Roh</th>
+                <th class="px-3 py-2 text-right font-semibold">Justiert</th>
+                <th class="px-3 py-2 text-right font-semibold">Prozent</th>
+                <th class="px-3 py-2 text-right font-semibold">Note</th>
               </tr>
-            }
-          </tbody>
-        </table>
+            </thead>
+            <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+              @for (row of reviewRows; track index; let index = $index) {
+                <tr>
+                  <td class="px-3 py-2 font-medium text-slate-900 dark:text-slate-100">{{ row.name }}</td>
+                  @for (points of row.pointsByTask; track taskIndex; let taskIndex = $index) {
+                    <td class="px-3 py-2 text-right text-slate-700 dark:text-slate-300">
+                      {{ formatOptionalNumber(points) }}
+                    </td>
+                  }
+                  <td class="px-3 py-2 text-right font-medium text-slate-900 dark:text-slate-100">
+                    {{ formatNumber(row.rawPoints) }}
+                  </td>
+                  <td class="px-3 py-2 text-right font-semibold text-slate-950 dark:text-slate-100">
+                    {{ formatNumber(row.adjustedPoints) }}
+                  </td>
+                  <td class="px-3 py-2 text-right font-medium text-slate-900 dark:text-slate-100">
+                    {{ formatPercent(row.percent) }}
+                  </td>
+                  <td class="px-3 py-2 text-right font-semibold text-slate-950 dark:text-slate-100">{{ row.grade }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <p class="mt-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
+          {{ adjustmentDescription }}
+        </p>
+      </div>
+    </section>
+
+    <section class="space-y-6">
+      <div>
+        <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Justierung dokumentieren</h3>
+        <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">
+          Wähle das Verfahren und halte Prüfer sowie Begründung für die Anpassung fest.
+        </p>
       </div>
 
-      <p class="mt-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
-        {{ adjustmentDescription }}
-      </p>
-    </div>
-  </section>
+      <fieldset>
+        <legend class="field-label">Verfahren</legend>
 
-  <section class="space-y-6">
-    <div>
-      <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Justierung dokumentieren</h3>
-      <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">
-        Wähle das Verfahren und halte Prüfer sowie Begründung für die Anpassung fest.
-      </p>
-    </div>
+        <div class="mt-2 grid gap-2 md:grid-cols-3">
+          <label class="flex cursor-pointer items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+            <input
+              class="h-4 w-4 accent-slate-950 dark:accent-slate-100"
+              type="radio"
+              name="method"
+              [checked]="data.method === 'none'"
+              (change)="updateJustierung('method', 'none')"
+              (blur)="wizard.markCurrentTouched()"
+            />
+            <span>Keine Justierung</span>
+          </label>
 
-    <fieldset>
-      <legend class="field-label">Verfahren</legend>
+          <label class="flex cursor-pointer items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+            <input
+              class="h-4 w-4 accent-slate-950 dark:accent-slate-100"
+              type="radio"
+              name="method"
+              [checked]="data.method === 'bonus'"
+              (change)="updateJustierung('method', 'bonus')"
+              (blur)="wizard.markCurrentTouched()"
+            />
+            <span>Bonus</span>
+          </label>
 
-      <div class="mt-2 grid gap-2 md:grid-cols-3">
-        <label class="flex cursor-pointer items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+          <label class="flex cursor-pointer items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+            <input
+              class="h-4 w-4 accent-slate-950 dark:accent-slate-100"
+              type="radio"
+              name="method"
+              [checked]="data.method === 'linear'"
+              (change)="updateJustierung('method', 'linear')"
+              (blur)="wizard.markCurrentTouched()"
+            />
+            <span>Linear</span>
+          </label>
+        </div>
+      </fieldset>
+
+      <div class="field-grid">
+        <label>
+          <span class="field-label">Bonuspunktzahl</span>
           <input
-            class="h-4 w-4 accent-slate-950 dark:accent-slate-100"
-            type="radio"
-            name="method"
-            [checked]="data.method === 'none'"
-            (change)="updateJustierung('method', 'none')"
+            class="field-input"
+            [class.field-input-error]="showErrors && errors['bonusPoints']"
+            type="number"
+            min="0"
+            step="0.5"
+            [value]="data.bonusPoints ?? ''"
+            [disabled]="data.method !== 'bonus'"
+            (input)="updateJustierung('bonusPoints', numberValue($event))"
             (blur)="wizard.markCurrentTouched()"
           />
-          <span>Keine Justierung</span>
+          <app-field-error [errors]="showErrors ? errors['bonusPoints'] : undefined" />
         </label>
 
-        <label class="flex cursor-pointer items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+        <label>
+          <span class="field-label">Prüfer</span>
           <input
-            class="h-4 w-4 accent-slate-950 dark:accent-slate-100"
-            type="radio"
-            name="method"
-            [checked]="data.method === 'bonus'"
-            (change)="updateJustierung('method', 'bonus')"
+            class="field-input"
+            [class.field-input-error]="showErrors && errors['reviewer']"
+            type="text"
+            [value]="data.reviewer"
+            (input)="updateJustierung('reviewer', textValue($event))"
             (blur)="wizard.markCurrentTouched()"
           />
-          <span>Bonus</span>
-        </label>
-
-        <label class="flex cursor-pointer items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
-          <input
-            class="h-4 w-4 accent-slate-950 dark:accent-slate-100"
-            type="radio"
-            name="method"
-            [checked]="data.method === 'linear'"
-            (change)="updateJustierung('method', 'linear')"
-            (blur)="wizard.markCurrentTouched()"
-          />
-          <span>Linear</span>
+          <app-field-error [errors]="showErrors ? errors['reviewer'] : undefined" />
         </label>
       </div>
-    </fieldset>
 
-    <div class="field-grid">
-      <label>
-        <span class="field-label">Bonuspunktzahl</span>
-        <input
-          class="field-input"
-          [class.field-input-error]="showErrors && errors['bonusPoints']"
-          type="number"
-          min="0"
-          step="0.5"
-          [value]="data.bonusPoints ?? ''"
-          [disabled]="data.method !== 'bonus'"
-          (input)="updateJustierung('bonusPoints', numberValue($event))"
+      <label class="block">
+        <span class="field-label">Begründung</span>
+        <textarea
+          class="field-input min-h-28 resize-y"
+          [class.field-input-error]="showErrors && errors['reason']"
+          [value]="data.reason"
+          (input)="updateJustierung('reason', textValue($event))"
           (blur)="wizard.markCurrentTouched()"
-        />
-        <app-field-error [errors]="showErrors ? errors['bonusPoints'] : undefined" />
+        ></textarea>
+        <app-field-error [errors]="showErrors ? errors['reason'] : undefined" />
       </label>
-
-      <label>
-        <span class="field-label">Prüfer</span>
-        <input
-          class="field-input"
-          [class.field-input-error]="showErrors && errors['reviewer']"
-          type="text"
-          [value]="data.reviewer"
-          (input)="updateJustierung('reviewer', textValue($event))"
-          (blur)="wizard.markCurrentTouched()"
-        />
-        <app-field-error [errors]="showErrors ? errors['reviewer'] : undefined" />
-      </label>
-    </div>
-
-    <label class="block">
-      <span class="field-label">Begründung</span>
-      <textarea
-        class="field-input min-h-28 resize-y"
-        [class.field-input-error]="showErrors && errors['reason']"
-        [value]="data.reason"
-        (input)="updateJustierung('reason', textValue($event))"
-        (blur)="wizard.markCurrentTouched()"
-      ></textarea>
-      <app-field-error [errors]="showErrors ? errors['reason'] : undefined" />
-    </label>
-  </section>
+    </section>
+  }
 </div>

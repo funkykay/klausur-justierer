@@ -139,8 +139,11 @@ function buildValidation(steps: WizardStep[]): WizardValidationState {
 
 function validateState(state: WizardState): WizardState {
   const data = normalizeData(state.data);
+  const currentStepId = state.steps[state.currentStepIndex]?.id;
+  const touchesPrerequisites = currentStepId === 'justierung';
   const steps = state.steps.map((step) => ({
     ...step,
+    touched: touchesPrerequisites && step.id !== 'justierung' ? true : step.touched,
     validation: step.validate(data)
   }));
 

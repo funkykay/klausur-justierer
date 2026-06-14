@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import type { ExamParticipant, WizardData } from '../../../../core/wizard.models';
+import type { ExamParticipant, FieldErrors, StepId, WizardData } from '../../../../core/wizard.models';
 import { WizardService } from '../../../../core/wizard.service';
 import { FieldErrorComponent } from '../../../../shared/field-error/field-error.component';
 
@@ -10,6 +10,12 @@ type ParticipantReviewRow = {
   adjustedPoints: number;
   percent: number;
   grade: string;
+};
+
+type PrerequisiteIssue = {
+  stepId: StepId;
+  title: string;
+  messages: string[];
 };
 
 @Component({
@@ -54,6 +60,26 @@ export class JustierungStepComponent {
 
   protected get showErrors(): boolean {
     return Boolean(this.state().steps.find((item) => item.id === 'justierung')?.touched);
+  }
+
+  protected get canAdjust(): boolean {
+    return this.state().steps
+      .filter((step) => step.id !== 'justierung')
+      .every((step) => step.validation.valid);
+  }
+
+  protected get prerequisiteIssues(): PrerequisiteIssue[] {
+    return this.state().steps
+      .filter((step) => step.id !== 'justierung' && !step.validation.valid)
+      .map((step) => {
+        const messages = this.collectStepValidationMessages(step.id, step.validation.errors);
+
+        return {
+          stepId: step.id,
+          title: step.title,
+          messages: messages.length > 0 ? messages : ['Bitte Angaben prüfen.']
+        };
+      });
   }
 
   protected get totalPoints(): number {
@@ -148,6 +174,16 @@ export class JustierungStepComponent {
     }));
   }
 
+  goToFirstInvalidPrerequisite(): void {
+    const firstInvalidStepIndex = this.state().steps.findIndex(
+      (step) => step.id !== 'justierung' && !step.validation.valid
+    );
+
+    if (firstInvalidStepIndex >= 0) {
+      this.wizard.goTo(firstInvalidStepIndex);
+    }
+  }
+
   displayText(value: string): string {
     const normalized = value.trim();
 
@@ -205,5 +241,103 @@ export class JustierungStepComponent {
       .find((item) => percent >= (item.minPercent ?? 0));
 
     return threshold ? this.displayText(threshold.grade) : '—';
+  }
+
+  private collectStepValidationMessages(stepId: StepId, fieldErrors: FieldErrors): string[] {
+    return Object.entries(fieldErrors).flatMap(([field, messages]) =>
+      messages.map((message) => `${this.formatStepErrorField(stepId, field)}: ${message}`)
+    );
+  }
+
+  private formatStepErrorField(stepId: StepId, field: string): string {
+    if (stepId === 'basis') {
+      return this.formatBasisErrorField(field);
+    }
+
+    if (stepId === 'aufgaben') {
+      return this.formatAufgabenErrorField(field);
+    }
+
+    if (stepId === 'notenschema') {
+      return this.formatNotenschemaErrorField(field);
+    }
+
+    if (stepId === 'teilnehmer') {
+      return this.formatTeilnehmerErrorField(field);
+    }
+
+    return field;
+  }
+
+  private formatBasisErrorField(field: string): string {
+    if (field === 'course') {
+      return 'Kurs';
+    }
+
+    if (field === 'topic') {
+      return 'Thema';
+    }
+
+    return field;
+  }
+
+  private formatAufgabenErrorField(field: string): string {
+    if (field === 'tasks') {
+      return 'Aufgaben';
+    }
+
+    const match = /^tasks\.(\d+)\.(name|maxPoints)$/.exec(field);
+
+    if (!match) {
+      return field;
+    }
+
+    const taskIndex = Number(match[1]);
+    const taskName = this.tasks[taskIndex]?.name.trim() || `Aufgabe ${taskIndex + 1}`;
+    const fieldName = match[2] === 'name' ? 'Name' : 'Punkte';
+
+    return `${taskName}, ${fieldName}`;
+  }
+
+  private formatNotenschemaErrorField(field: string): string {
+    if (field === 'gradeThresholds') {
+      return 'Notenschlüssel';
+    }
+
+    const match = /^gradeThresholds\.(\d+)\.(grade|minPercent)$/.exec(field);
+
+    if (!match) {
+      return field;
+    }
+
+    const thresholdIndex = Number(match[1]);
+    const thresholdName = this.gradeThresholds[thresholdIndex]?.grade.trim() || `Note ${thresholdIndex + 1}`;
+    const fieldName = match[2] === 'grade' ? 'Bezeichnung' : 'Ab Prozent';
+
+    return `${thresholdName}, ${fieldName}`;
+  }
+
+  private formatTeilnehmerErrorField(field: string): string {
+    if (field === 'participants') {
+      return 'Teilnehmer';
+    }
+
+    const nameMatch = /^participants\.(\d+)\.name$/.exec(field);
+
+    if (nameMatch) {
+      return `Zeile ${Number(nameMatch[1]) + 1}, Teilnehmer`;
+    }
+
+    const pointsMatch = /^participants\.(\d+)\.pointsByTask\.(\d+)$/.exec(field);
+
+    if (!pointsMatch) {
+      return field;
+    }
+
+    const row = Number(pointsMatch[1]) + 1;
+    const taskIndex = Number(pointsMatch[2]);
+    const taskName = this.tasks[taskIndex]?.name.trim() || `Aufgabe ${taskIndex + 1}`;
+
+    return `Zeile ${row}, ${taskName}`;
   }
 }
