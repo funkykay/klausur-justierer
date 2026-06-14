@@ -1,0 +1,68 @@
+<div class="space-y-6">
+  <div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+    <div>
+      <h3 class="text-sm font-semibold text-slate-900">Notenschlüssel</h3>
+      <p class="mt-1 text-sm text-slate-600">
+        Lege die Noten und die Mindestprozente fest. Die Reihenfolge läuft von der höchsten zur niedrigsten Schwelle.
+      </p>
+    </div>
+
+    <button class="button-secondary" type="button" (click)="addThreshold()">Note hinzufügen</button>
+  </div>
+
+  <app-field-error [errors]="showErrors ? errors['gradeThresholds'] : undefined" />
+
+  <div class="space-y-3">
+    @for (threshold of data.gradeThresholds; track index; let index = $index) {
+      <section class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <div class="grid gap-4 md:grid-cols-[minmax(0,1fr)_12rem_7rem] md:items-start">
+          <label>
+            <span class="field-label">Note</span>
+            <input
+              class="field-input"
+              [class.field-input-error]="showErrors && errors['gradeThresholds.' + index + '.grade']"
+              type="text"
+              [value]="threshold.grade"
+              placeholder="z. B. Sehr Gut"
+              (input)="updateThreshold(index, 'grade', textValue($event))"
+              (blur)="wizard.markCurrentTouched()"
+            />
+            <app-field-error [errors]="showErrors ? errors['gradeThresholds.' + index + '.grade'] : undefined" />
+          </label>
+
+          <label>
+            <span class="field-label">Ab Prozent</span>
+            <div class="relative">
+              <input
+                class="field-input pr-8"
+                [class.field-input-error]="showErrors && errors['gradeThresholds.' + index + '.minPercent']"
+                type="number"
+                min="0"
+                max="100"
+                step="0.5"
+                inputmode="decimal"
+                [value]="threshold.minPercent ?? ''"
+                placeholder="z. B. 90"
+                (input)="updateThreshold(index, 'minPercent', numberValue($event))"
+                (blur)="wizard.markCurrentTouched()"
+              />
+              <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-500">%</span>
+            </div>
+            <app-field-error [errors]="showErrors ? errors['gradeThresholds.' + index + '.minPercent'] : undefined" />
+          </label>
+
+          <div class="md:pt-6">
+            <button
+              class="button-secondary w-full"
+              type="button"
+              [disabled]="data.gradeThresholds.length === 1"
+              (click)="removeThreshold(index)"
+            >
+              Entfernen
+            </button>
+          </div>
+        </div>
+      </section>
+    }
+  </div>
+</div>

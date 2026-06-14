@@ -1,0 +1,86 @@
+<div class="space-y-6">
+  <fieldset>
+    <legend class="field-label">Verfahren</legend>
+
+    <div class="mt-2 grid gap-2 md:grid-cols-3">
+      <label class="flex cursor-pointer items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2">
+        <input
+          class="h-4 w-4 accent-slate-950"
+          type="radio"
+          name="method"
+          [checked]="data.method === 'none'"
+          (change)="updateJustierung('method', 'none')"
+          (blur)="wizard.markCurrentTouched()"
+        />
+        <span>Keine Justierung</span>
+      </label>
+
+      <label class="flex cursor-pointer items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2">
+        <input
+          class="h-4 w-4 accent-slate-950"
+          type="radio"
+          name="method"
+          [checked]="data.method === 'bonus'"
+          (change)="updateJustierung('method', 'bonus')"
+          (blur)="wizard.markCurrentTouched()"
+        />
+        <span>Bonus</span>
+      </label>
+
+      <label class="flex cursor-pointer items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2">
+        <input
+          class="h-4 w-4 accent-slate-950"
+          type="radio"
+          name="method"
+          [checked]="data.method === 'linear'"
+          (change)="updateJustierung('method', 'linear')"
+          (blur)="wizard.markCurrentTouched()"
+        />
+        <span>Linear</span>
+      </label>
+    </div>
+  </fieldset>
+
+  <div class="field-grid">
+    <label>
+      <span class="field-label">Bonuspunktzahl</span>
+      <input
+        class="field-input"
+        [class.field-input-error]="showErrors && errors['bonusPoints']"
+        type="number"
+        min="0"
+        step="0.5"
+        [value]="data.bonusPoints ?? ''"
+        [disabled]="data.method !== 'bonus'"
+        (input)="updateJustierung('bonusPoints', numberValue($event))"
+        (blur)="wizard.markCurrentTouched()"
+      />
+      <app-field-error [errors]="showErrors ? errors['bonusPoints'] : undefined" />
+    </label>
+
+    <label>
+      <span class="field-label">Prüfer</span>
+      <input
+        class="field-input"
+        [class.field-input-error]="showErrors && errors['reviewer']"
+        type="text"
+        [value]="data.reviewer"
+        (input)="updateJustierung('reviewer', textValue($event))"
+        (blur)="wizard.markCurrentTouched()"
+      />
+      <app-field-error [errors]="showErrors ? errors['reviewer'] : undefined" />
+    </label>
+  </div>
+
+  <label class="block">
+    <span class="field-label">Begründung</span>
+    <textarea
+      class="field-input min-h-28 resize-y"
+      [class.field-input-error]="showErrors && errors['reason']"
+      [value]="data.reason"
+      (input)="updateJustierung('reason', textValue($event))"
+      (blur)="wizard.markCurrentTouched()"
+    ></textarea>
+    <app-field-error [errors]="showErrors ? errors['reason'] : undefined" />
+  </label>
+</div>

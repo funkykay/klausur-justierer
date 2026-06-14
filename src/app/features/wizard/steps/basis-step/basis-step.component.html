@@ -1,0 +1,27 @@
+<div class="field-grid">
+  <label>
+    <span class="field-label">Kurs</span>
+    <input
+      class="field-input"
+      [class.field-input-error]="showErrors && errors['course']"
+      type="text"
+      [value]="data.course"
+      (input)="updateBasis('course', textValue($event))"
+      (blur)="wizard.markCurrentTouched()"
+    />
+    <app-field-error [errors]="showErrors ? errors['course'] : undefined" />
+  </label>
+
+  <label>
+    <span class="field-label">Thema</span>
+    <input
+      class="field-input"
+      [class.field-input-error]="showErrors && errors['topic']"
+      type="text"
+      [value]="data.topic"
+      (input)="updateBasis('topic', textValue($event))"
+      (blur)="wizard.markCurrentTouched()"
+    />
+    <app-field-error [errors]="showErrors ? errors['topic'] : undefined" />
+  </label>
+</div>

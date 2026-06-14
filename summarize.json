@@ -5,6 +5,8 @@
   "prune": [
     "node_modules/",
     ".git/",
-    "package-lock.json"
+    ".angular/",
+    "package-lock.json",
+    "pnpm-lock.yaml"
   ]
 }

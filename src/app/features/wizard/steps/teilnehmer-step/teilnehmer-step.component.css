@@ -1,0 +1,10 @@
+.teilnehmer-hot :global(.handsontable td.teilnehmer-grid-error) {
+  background-color: #fef2f2 !important;
+  color: #991b1b;
+}
+
+.teilnehmer-hot :global(.handsontable td.teilnehmer-grid-error.current),
+.teilnehmer-hot :global(.handsontable td.teilnehmer-grid-error.area),
+.teilnehmer-hot :global(.handsontable td.teilnehmer-grid-error.highlight) {
+  background-color: #fee2e2 !important;
+}

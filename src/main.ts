@@ -1,17 +1,7 @@
-import { mount } from 'svelte';
-import './app.css';
-import 'handsontable/styles/handsontable.min.css';
-import 'handsontable/styles/ht-theme-main.min.css';
-import App from './App.svelte';
+import { bootstrapApplication } from '@angular/platform-browser';
+import { appConfig } from './app/app.config';
+import { AppComponent } from './app/app.component';
 
-const target = document.getElementById('app');
-
-if (!target) {
-  throw new Error('App target not found.');
-}
-
-const app = mount(App, {
-  target
+bootstrapApplication(AppComponent, appConfig).catch((error) => {
+  throw error;
 });
-
-export default app;

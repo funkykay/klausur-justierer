@@ -1,0 +1,170 @@
+<div class="relative" #menuElement>
+  <button
+    class="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-300 bg-white text-slate-800 shadow-sm transition hover:border-slate-400 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/20"
+    type="button"
+    aria-label="Aktionen"
+    aria-haspopup="menu"
+    [attr.aria-expanded]="menuOpen"
+    (click)="menuOpen = !menuOpen"
+  >
+    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M4.75 6.75h14.5" />
+      <path stroke-linecap="round" stroke-linejoin="round" d="M4.75 12h14.5" />
+      <path stroke-linecap="round" stroke-linejoin="round" d="M4.75 17.25h14.5" />
+    </svg>
+  </button>
+
+  @if (menuOpen) {
+    <div
+      class="absolute right-0 z-30 mt-2 w-52 overflow-hidden rounded-md border border-slate-200 bg-white py-1 text-sm shadow-lg"
+      role="menu"
+    >
+      <button
+        class="block w-full px-4 py-2 text-left text-slate-800 transition hover:bg-slate-50"
+        type="button"
+        role="menuitem"
+        (click)="openLoadModal()"
+      >
+        Lade Session
+      </button>
+
+      <button
+        class="block w-full px-4 py-2 text-left text-slate-800 transition hover:bg-slate-50"
+        type="button"
+        role="menuitem"
+        (click)="openFileImport()"
+      >
+        Importiere Datei
+      </button>
+
+      <div class="my-1 border-t border-slate-100"></div>
+
+      <button
+        class="block w-full px-4 py-2 text-left text-slate-800 transition hover:bg-slate-50"
+        type="button"
+        role="menuitem"
+        (click)="openSaveModal()"
+      >
+        Speichere Session
+      </button>
+
+      <button
+        class="block w-full px-4 py-2 text-left text-slate-800 transition hover:bg-slate-50"
+        type="button"
+        role="menuitem"
+        (click)="exportFile()"
+      >
+        Exportiere Datei
+      </button>
+    </div>
+  }
+</div>
+
+<input #fileInput class="hidden" type="file" accept="application/json,.json" (change)="importFile($event)" />
+
+@if (activeModal === 'save') {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4"
+    role="presentation"
+    (click)="closeModalOnBackdrop($event)"
+  >
+    <div
+      class="w-full max-w-md rounded-lg border border-slate-200 bg-white p-5 shadow-xl"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="save-session-title"
+    >
+      <form
+        (submit)="
+          $event.preventDefault();
+          saveSession()
+        "
+      >
+        <h2 id="save-session-title" class="text-lg font-semibold text-slate-950">Session speichern</h2>
+        <p class="mt-2 text-sm text-slate-600">Gib einen Namen an, unter dem die aktuelle Session gespeichert wird.</p>
+
+        <label class="mt-5 block">
+          <span class="field-label">Session-Name</span>
+          <input #sessionNameInput class="field-input" type="text" [(ngModel)]="sessionName" name="sessionName" list="saved-session-names" />
+        </label>
+
+        <datalist id="saved-session-names">
+          @for (session of sessions; track session.name) {
+            <option [value]="session.name">{{ session.name }}</option>
+          }
+        </datalist>
+
+        <div class="mt-6 flex justify-end gap-2">
+          <button class="button-secondary" type="button" (click)="closeModal()">Abbrechen</button>
+          <button class="button-primary" type="submit" [disabled]="!canSave">Speichern</button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+@if (activeModal === 'load') {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4"
+    role="presentation"
+    (click)="closeModalOnBackdrop($event)"
+  >
+    <div
+      class="w-full max-w-md rounded-lg border border-slate-200 bg-white p-5 shadow-xl"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="load-session-title"
+    >
+      <form
+        (submit)="
+          $event.preventDefault();
+          loadSession()
+        "
+      >
+        <h2 id="load-session-title" class="text-lg font-semibold text-slate-950">Session laden</h2>
+
+        @if (sessions.length) {
+          <label class="mt-5 block">
+            <span class="field-label">Gespeicherte Session</span>
+            <select #selectedSessionSelect class="field-input" [(ngModel)]="selectedSessionName" name="selectedSessionName">
+              @for (session of sessions; track session.name) {
+                <option [value]="session.name">{{ session.name }} · {{ formatSavedAt(session.savedAt) }}</option>
+              }
+            </select>
+          </label>
+        } @else {
+          <p class="mt-4 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+            Es sind noch keine Sessions gespeichert.
+          </p>
+        }
+
+        <div class="mt-6 flex justify-end gap-2">
+          <button class="button-secondary" type="button" (click)="closeModal()">Abbrechen</button>
+          <button class="button-primary" type="submit" [disabled]="!canLoad">Laden</button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+@if (fileError) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4"
+    role="presentation"
+    (click)="closeFileErrorOnBackdrop($event)"
+  >
+    <div
+      class="w-full max-w-md rounded-lg border border-red-200 bg-white p-5 shadow-xl"
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby="file-error-title"
+    >
+      <h2 id="file-error-title" class="text-lg font-semibold text-red-800">Import nicht möglich</h2>
+      <p class="mt-2 text-sm text-slate-700">{{ fileError }}</p>
+
+      <div class="mt-6 flex justify-end">
+        <button class="button-primary" type="button" (click)="closeFileError()">Schließen</button>
+      </div>
+    </div>
+  </div>
+}

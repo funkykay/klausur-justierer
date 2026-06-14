@@ -1,0 +1,7 @@
+@if (errors?.length) {
+  <div class="mt-1 space-y-1 text-xs font-medium text-red-700">
+    @for (error of errors; track error) {
+      <p>{{ error }}</p>
+    }
+  </div>
+}
