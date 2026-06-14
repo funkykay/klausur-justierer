@@ -1,6 +1,6 @@
 <div class="flex items-center gap-2" #menuElement>
   <a
-    class="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-300 bg-white text-slate-800 shadow-sm transition hover:border-slate-400 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/20"
+    class="icon-button"
     [href]="settings.githubRepositoryUrl"
     target="_blank"
     rel="noopener noreferrer"
@@ -13,9 +13,39 @@
     </svg>
   </a>
 
+  <button
+    class="icon-button"
+    type="button"
+    [attr.aria-label]="theme.isDark() ? 'Light Mode aktivieren' : 'Dark Mode aktivieren'"
+    [attr.title]="theme.isDark() ? 'Light Mode aktivieren' : 'Dark Mode aktivieren'"
+    (click)="theme.toggle()"
+  >
+    @if (theme.isDark()) {
+      <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3.75V2.25" />
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 21.75v-1.5" />
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4.64 4.64 3.58 3.58" />
+        <path stroke-linecap="round" stroke-linejoin="round" d="m20.42 20.42-1.06-1.06" />
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12H2.25" />
+        <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 12h-1.5" />
+        <path stroke-linecap="round" stroke-linejoin="round" d="m4.64 19.36-1.06 1.06" />
+        <path stroke-linecap="round" stroke-linejoin="round" d="m20.42 3.58-1.06 1.06" />
+        <circle cx="12" cy="12" r="4.25" />
+      </svg>
+    } @else {
+      <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M20.35 14.4A8.35 8.35 0 0 1 9.6 3.65 8.36 8.36 0 1 0 20.35 14.4Z"
+        />
+      </svg>
+    }
+  </button>
+
   <div class="relative">
     <button
-      class="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-300 bg-white text-slate-800 shadow-sm transition hover:border-slate-400 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/20"
+      class="icon-button"
       type="button"
       aria-label="Aktionen"
       aria-haspopup="menu"
@@ -30,65 +60,22 @@
     </button>
 
     @if (menuOpen) {
-      <div
-        class="absolute right-0 z-30 mt-2 w-52 overflow-hidden rounded-md border border-slate-200 bg-white py-1 text-sm shadow-lg"
-        role="menu"
-      >
-        <button
-          class="block w-full px-4 py-2 text-left text-slate-800 transition hover:bg-slate-50"
-          type="button"
-          role="menuitem"
-          (click)="openLoadModal()"
-        >
-          Lade Session
-        </button>
+      <div class="dropdown-panel" role="menu">
+        <button class="dropdown-item" type="button" role="menuitem" (click)="openLoadModal()">Lade Session</button>
 
-        <button
-          class="block w-full px-4 py-2 text-left text-slate-800 transition hover:bg-slate-50"
-          type="button"
-          role="menuitem"
-          (click)="openFileImport()"
-        >
-          Importiere Datei
-        </button>
+        <button class="dropdown-item" type="button" role="menuitem" (click)="openFileImport()">Importiere Datei</button>
 
-        <div class="my-1 border-t border-slate-100"></div>
+        <div class="dropdown-divider"></div>
 
-        <button
-          class="block w-full px-4 py-2 text-left text-slate-800 transition hover:bg-slate-50"
-          type="button"
-          role="menuitem"
-          (click)="openSaveModal()"
-        >
-          Speichere Session
-        </button>
+        <button class="dropdown-item" type="button" role="menuitem" (click)="openSaveModal()">Speichere Session</button>
 
-        <button
-          class="block w-full px-4 py-2 text-left text-slate-800 transition hover:bg-slate-50"
-          type="button"
-          role="menuitem"
-          (click)="exportFile()"
-        >
-          Exportiere Datei
-        </button>
+        <button class="dropdown-item" type="button" role="menuitem" (click)="exportFile()">Exportiere Datei</button>
 
-        <div class="my-1 border-t border-slate-100"></div>
+        <div class="dropdown-divider"></div>
 
-        <button
-          class="block w-full px-4 py-2 text-left text-slate-800 transition hover:bg-slate-50"
-          type="button"
-          role="menuitem"
-          (click)="openImpressumModal()"
-        >
-          Impressum
-        </button>
+        <button class="dropdown-item" type="button" role="menuitem" (click)="openImpressumModal()">Impressum</button>
 
-        <button
-          class="block w-full px-4 py-2 text-left text-slate-800 transition hover:bg-slate-50"
-          type="button"
-          role="menuitem"
-          (click)="openDatenschutzModal()"
-        >
+        <button class="dropdown-item" type="button" role="menuitem" (click)="openDatenschutzModal()">
           Datenschutzerklärung
         </button>
       </div>
@@ -99,25 +86,16 @@
 <input #fileInput class="hidden" type="file" accept="application/json,.json" (change)="importFile($event)" />
 
 @if (activeModal === 'save') {
-  <div
-    class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4"
-    role="presentation"
-    (click)="closeModalOnBackdrop($event)"
-  >
-    <div
-      class="w-full max-w-md rounded-lg border border-slate-200 bg-white p-5 shadow-xl"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="save-session-title"
-    >
+  <div class="modal-backdrop" role="presentation" (click)="closeModalOnBackdrop($event)">
+    <div class="modal-card max-w-md" role="dialog" aria-modal="true" aria-labelledby="save-session-title">
       <form
         (submit)="
           $event.preventDefault();
           saveSession()
         "
       >
-        <h2 id="save-session-title" class="text-lg font-semibold text-slate-950">Session speichern</h2>
-        <p class="mt-2 text-sm text-slate-600">Gib einen Namen an, unter dem die aktuelle Session gespeichert wird.</p>
+        <h2 id="save-session-title" class="modal-title">Session speichern</h2>
+        <p class="mt-2 modal-text">Gib einen Namen an, unter dem die aktuelle Session gespeichert wird.</p>
 
         <label class="mt-5 block">
           <span class="field-label">Session-Name</span>
@@ -140,24 +118,15 @@
 }
 
 @if (activeModal === 'load') {
-  <div
-    class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4"
-    role="presentation"
-    (click)="closeModalOnBackdrop($event)"
-  >
-    <div
-      class="w-full max-w-md rounded-lg border border-slate-200 bg-white p-5 shadow-xl"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="load-session-title"
-    >
+  <div class="modal-backdrop" role="presentation" (click)="closeModalOnBackdrop($event)">
+    <div class="modal-card max-w-md" role="dialog" aria-modal="true" aria-labelledby="load-session-title">
       <form
         (submit)="
           $event.preventDefault();
           loadSession()
         "
       >
-        <h2 id="load-session-title" class="text-lg font-semibold text-slate-950">Session laden</h2>
+        <h2 id="load-session-title" class="modal-title">Session laden</h2>
 
         @if (sessions.length) {
           <label class="mt-5 block">
@@ -169,7 +138,7 @@
             </select>
           </label>
         } @else {
-          <p class="mt-4 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+          <p class="mt-4 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400">
             Es sind noch keine Sessions gespeichert.
           </p>
         }
@@ -184,22 +153,13 @@
 }
 
 @if (activeModal === 'impressum') {
-  <div
-    class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4"
-    role="presentation"
-    (click)="closeModalOnBackdrop($event)"
-  >
-    <div
-      class="w-full max-w-md rounded-lg border border-slate-200 bg-white p-5 shadow-xl"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="impressum-title"
-    >
-      <h2 id="impressum-title" class="text-lg font-semibold text-slate-950">Impressum</h2>
+  <div class="modal-backdrop" role="presentation" (click)="closeModalOnBackdrop($event)">
+    <div class="modal-card max-w-md" role="dialog" aria-modal="true" aria-labelledby="impressum-title">
+      <h2 id="impressum-title" class="modal-title">Impressum</h2>
 
-      <div class="mt-4 space-y-4 text-sm text-slate-700">
+      <div class="mt-4 space-y-4 text-sm text-slate-700 dark:text-slate-300">
         <section>
-          <h3 class="font-semibold text-slate-900">Betreiber</h3>
+          <h3 class="font-semibold text-slate-900 dark:text-slate-100">Betreiber</h3>
           <p class="mt-1">
             Kay Donner<br />
             Ludwigstraße 9<br />
@@ -208,7 +168,7 @@
         </section>
 
         <section>
-          <h3 class="font-semibold text-slate-900">Verantwortlich für den Inhalt</h3>
+          <h3 class="font-semibold text-slate-900 dark:text-slate-100">Verantwortlich für den Inhalt</h3>
           <p class="mt-1">
             Kay Donner<br />
             Ludwigstraße 9<br />
@@ -225,22 +185,18 @@
 }
 
 @if (activeModal === 'datenschutz') {
-  <div
-    class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4"
-    role="presentation"
-    (click)="closeModalOnBackdrop($event)"
-  >
+  <div class="modal-backdrop" role="presentation" (click)="closeModalOnBackdrop($event)">
     <div
-      class="max-h-[calc(100vh-4rem)] w-full max-w-2xl overflow-y-auto rounded-lg border border-slate-200 bg-white p-5 shadow-xl"
+      class="modal-card max-h-[calc(100vh-4rem)] max-w-2xl overflow-y-auto"
       role="dialog"
       aria-modal="true"
       aria-labelledby="datenschutz-title"
     >
-      <h2 id="datenschutz-title" class="text-lg font-semibold text-slate-950">Datenschutzerklärung</h2>
+      <h2 id="datenschutz-title" class="modal-title">Datenschutzerklärung</h2>
 
-      <div class="mt-4 space-y-4 text-sm text-slate-700">
+      <div class="mt-4 space-y-4 text-sm text-slate-700 dark:text-slate-300">
         <section>
-          <h3 class="font-semibold text-slate-900">Verantwortlicher</h3>
+          <h3 class="font-semibold text-slate-900 dark:text-slate-100">Verantwortlicher</h3>
           <p class="mt-1">
             Kay Donner<br />
             Ludwigstraße 9<br />
@@ -249,7 +205,7 @@
         </section>
 
         <section>
-          <h3 class="font-semibold text-slate-900">Keine Datenerhebung durch diese Anwendung</h3>
+          <h3 class="font-semibold text-slate-900 dark:text-slate-100">Keine Datenerhebung durch diese Anwendung</h3>
           <p class="mt-1">
             Diese Anwendung erhebt und übermittelt keine personenbezogenen Daten an den Betreiber.
             Eingegebene Inhalte werden nur lokal im Browser verarbeitet.
@@ -257,7 +213,7 @@
         </section>
 
         <section>
-          <h3 class="font-semibold text-slate-900">Lokale Speicherung</h3>
+          <h3 class="font-semibold text-slate-900 dark:text-slate-100">Lokale Speicherung</h3>
           <p class="mt-1">
             Wenn Sessions gespeichert werden, legt die Anwendung die eingegebenen Daten ausschließlich im Local Storage
             des verwendeten Browsers ab. Diese Daten bleiben auf dem Gerät und können über die Browserdaten für diese
@@ -266,7 +222,7 @@
         </section>
 
         <section>
-          <h3 class="font-semibold text-slate-900">Import und Export</h3>
+          <h3 class="font-semibold text-slate-900 dark:text-slate-100">Import und Export</h3>
           <p class="mt-1">
             Beim Import und Export von JSON-Dateien werden die ausgewählten Dateien lokal im Browser verarbeitet.
             Es findet keine Übermittlung dieser Dateien an den Betreiber statt.
@@ -274,7 +230,7 @@
         </section>
 
         <section>
-          <h3 class="font-semibold text-slate-900">Technischer Betrieb</h3>
+          <h3 class="font-semibold text-slate-900 dark:text-slate-100">Technischer Betrieb</h3>
           <p class="mt-1">
             Beim Aufruf der Webseite können durch den technischen Betrieb des Hostings Verbindungsdaten wie IP-Adresse,
             Zeitpunkt des Zugriffs oder Browserinformationen verarbeitet werden. Dem Betreiber liegen hierzu keine
@@ -291,19 +247,15 @@
 }
 
 @if (fileError) {
-  <div
-    class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4"
-    role="presentation"
-    (click)="closeFileErrorOnBackdrop($event)"
-  >
+  <div class="modal-backdrop" role="presentation" (click)="closeFileErrorOnBackdrop($event)">
     <div
-      class="w-full max-w-md rounded-lg border border-red-200 bg-white p-5 shadow-xl"
+      class="modal-card max-w-md border-red-200 dark:border-red-900"
       role="alertdialog"
       aria-modal="true"
       aria-labelledby="file-error-title"
     >
-      <h2 id="file-error-title" class="text-lg font-semibold text-red-800">Import nicht möglich</h2>
-      <p class="mt-2 text-sm text-slate-700">{{ fileError }}</p>
+      <h2 id="file-error-title" class="text-lg font-semibold text-red-800 dark:text-red-200">Import nicht möglich</h2>
+      <p class="mt-2 text-sm text-slate-700 dark:text-slate-300">{{ fileError }}</p>
 
       <div class="mt-6 flex justify-end">
         <button class="button-primary" type="button" (click)="closeFileError()">Schließen</button>

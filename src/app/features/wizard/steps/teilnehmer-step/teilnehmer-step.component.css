@@ -1,10 +1,21 @@
-.teilnehmer-hot :global(.handsontable td.teilnehmer-grid-error) {
+:host ::ng-deep .handsontable td.teilnehmer-grid-error {
   background-color: #fef2f2 !important;
   color: #991b1b;
 }
 
-.teilnehmer-hot :global(.handsontable td.teilnehmer-grid-error.current),
-.teilnehmer-hot :global(.handsontable td.teilnehmer-grid-error.area),
-.teilnehmer-hot :global(.handsontable td.teilnehmer-grid-error.highlight) {
+:host ::ng-deep .handsontable td.teilnehmer-grid-error.current,
+:host ::ng-deep .handsontable td.teilnehmer-grid-error.area,
+:host ::ng-deep .handsontable td.teilnehmer-grid-error.highlight {
   background-color: #fee2e2 !important;
+}
+
+:host-context(.dark) ::ng-deep .handsontable td.teilnehmer-grid-error {
+  background-color: #450a0a !important;
+  color: #fecaca;
+}
+
+:host-context(.dark) ::ng-deep .handsontable td.teilnehmer-grid-error.current,
+:host-context(.dark) ::ng-deep .handsontable td.teilnehmer-grid-error.area,
+:host-context(.dark) ::ng-deep .handsontable td.teilnehmer-grid-error.highlight {
+  background-color: #7f1d1d !important;
 }

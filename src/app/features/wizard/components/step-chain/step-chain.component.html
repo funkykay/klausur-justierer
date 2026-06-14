@@ -11,7 +11,7 @@
         }
 
         <button
-          class="relative z-10 flex w-full flex-col items-center gap-2 rounded-lg px-2 py-1.5 text-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/20"
+          class="relative z-10 flex w-full flex-col items-center gap-2 rounded-lg px-2 py-1.5 text-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950/20 dark:focus-visible:ring-slate-100/20"
           type="button"
           [attr.aria-current]="index === state().currentStepIndex ? 'step' : null"
           (click)="wizard.goTo(index)"
@@ -23,7 +23,7 @@
             {{ index + 1 }}
           </span>
 
-          <span class="block max-w-20 text-xs font-medium leading-tight text-slate-900 md:max-w-none md:text-sm">
+          <span class="block max-w-20 text-xs font-medium leading-tight text-slate-900 dark:text-slate-100 md:max-w-none md:text-sm">
             {{ step.title }}
           </span>
         </button>

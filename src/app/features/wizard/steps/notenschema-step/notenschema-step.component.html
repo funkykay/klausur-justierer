@@ -1,8 +1,8 @@
 <div class="space-y-6">
   <div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
     <div>
-      <h3 class="text-sm font-semibold text-slate-900">Notenschlüssel</h3>
-      <p class="mt-1 text-sm text-slate-600">
+      <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Notenschlüssel</h3>
+      <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">
         Lege die Noten und die Mindestprozente fest. Die Reihenfolge läuft von der höchsten zur niedrigsten Schwelle.
       </p>
     </div>
@@ -14,7 +14,7 @@
 
   <div class="space-y-3">
     @for (threshold of data.gradeThresholds; track index; let index = $index) {
-      <section class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+      <section class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div class="grid gap-4 md:grid-cols-[minmax(0,1fr)_12rem_7rem] md:items-start">
           <label>
             <span class="field-label">Note</span>
@@ -46,7 +46,7 @@
                 (input)="updateThreshold(index, 'minPercent', numberValue($event))"
                 (blur)="wizard.markCurrentTouched()"
               />
-              <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-500">%</span>
+              <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-500 dark:text-slate-400">%</span>
             </div>
             <app-field-error [errors]="showErrors ? errors['gradeThresholds.' + index + '.minPercent'] : undefined" />
           </label>
