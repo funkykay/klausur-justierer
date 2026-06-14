@@ -39,7 +39,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build
-        run: pnpm build -- --base-href /klausur-justierer/
+        run: pnpm exec ng build --base-href=/klausur-justierer/
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v4
