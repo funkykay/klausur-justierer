@@ -159,6 +159,10 @@ export class JustierungStepComponent implements OnDestroy {
     return this.data.gradeThresholds;
   }
 
+  protected get adjustedMaxPointsByTask(): WizardData['justierung']['adjustedMaxPointsByTask'] {
+    return this.data.adjustedMaxPointsByTask;
+  }
+
   protected get participants(): WizardData['teilnehmer']['participants'] {
     return this.state().data.teilnehmer.participants;
   }
@@ -200,10 +204,17 @@ export class JustierungStepComponent implements OnDestroy {
   }
 
   protected get adjustedTotalPoints(): number {
-    return this.tasks.reduce(
-      (sum, task, index) => (this.data.droppedTaskIndexes.includes(index) ? sum : sum + (task.maxPoints ?? 0)),
-      0
-    );
+    return this.tasks.reduce((sum, _, index) => {
+      if (this.data.droppedTaskIndexes.includes(index)) {
+        return sum;
+      }
+
+      return sum + this.adjustedMaxPointsForTask(index);
+    }, 0);
+  }
+
+  protected get changedAdjustedMaxPointsCount(): number {
+    return this.tasks.filter((task, index) => this.adjustedMaxPointsByTask[index] !== task.maxPoints).length;
   }
 
   protected get changedThresholdCount(): number {
@@ -219,6 +230,10 @@ export class JustierungStepComponent implements OnDestroy {
 
     if (this.data.droppedTaskIndexes.length > 0) {
       adjustments.push(`${this.data.droppedTaskIndexes.length} Aufgabe(n) gestrichen`);
+    }
+
+    if (this.changedAdjustedMaxPointsCount > 0) {
+      adjustments.push(`${this.changedAdjustedMaxPointsCount} Aufgabenpunktzahl(en) angepasst`);
     }
 
     if (this.changedThresholdCount > 0) {
@@ -432,6 +447,18 @@ export class JustierungStepComponent implements OnDestroy {
       };
     });
     this.wizard.markCurrentTouched();
+  }
+
+  updateAdjustedMaxPoints(index: number, maxPoints: number | null): void {
+    this.wizard.updateData((current) => ({
+      ...current,
+      justierung: {
+        ...current.justierung,
+        adjustedMaxPointsByTask: current.justierung.adjustedMaxPointsByTask.map((value, taskIndex) =>
+          taskIndex === index ? maxPoints : value
+        )
+      }
+    }));
   }
 
   updateAdjustedThreshold(index: number, minPercent: number | null): void {
@@ -727,13 +754,27 @@ export class JustierungStepComponent implements OnDestroy {
   }
 
   private calculateAdjustedPoints(participant: ExamParticipant): number {
-    return this.tasks.reduce((sum, _, taskIndex) => {
+    return this.tasks.reduce((sum, task, taskIndex) => {
       if (this.data.droppedTaskIndexes.includes(taskIndex)) {
         return sum;
       }
 
-      return sum + (participant.pointsByTask[taskIndex] ?? 0);
+      const originalMaxPoints = task.maxPoints ?? 0;
+      const adjustedMaxPoints = this.adjustedMaxPointsForTask(taskIndex);
+      const participantPoints = participant.pointsByTask[taskIndex] ?? 0;
+
+      if (originalMaxPoints <= 0) {
+        return sum;
+      }
+
+      return sum + (participantPoints / originalMaxPoints) * adjustedMaxPoints;
     }, 0);
+  }
+
+  private adjustedMaxPointsForTask(index: number): number {
+    const maxPoints = this.adjustedMaxPointsByTask[index];
+
+    return typeof maxPoints === 'number' && Number.isFinite(maxPoints) && maxPoints >= 0 ? maxPoints : 0;
   }
 
   private calculatePercent(points: number, totalPoints: number): number {

@@ -44,6 +44,7 @@ export type WizardData = {
   justierung: {
     resultView: AdjustmentResultView;
     droppedTaskIndexes: number[];
+    adjustedMaxPointsByTask: (number | null)[];
     gradeThresholds: GradeThreshold[];
   };
 };

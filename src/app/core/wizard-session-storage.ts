@@ -24,7 +24,7 @@ export type StoredWizardSession = {
 
 export type WizardSessionExport = {
   format: 'klasur-justierer-session';
-  version: 11;
+  version: 12;
   exportedAt: string;
   data: WizardData;
   touchedStepIds: StepId[];
@@ -93,10 +93,15 @@ function createDefaultTeilnehmerData(taskCount: number): WizardData['teilnehmer'
   };
 }
 
-function createDefaultJustierungData(gradeThresholds: GradeThreshold[]): WizardData['justierung'] {
+function createDefaultAdjustedMaxPointsByTask(tasks: ExamTask[]): (number | null)[] {
+  return tasks.map((task) => task.maxPoints);
+}
+
+function createDefaultJustierungData(gradeThresholds: GradeThreshold[], tasks: ExamTask[]): WizardData['justierung'] {
   return {
     resultView: 'chart',
     droppedTaskIndexes: [],
+    adjustedMaxPointsByTask: createDefaultAdjustedMaxPointsByTask(tasks),
     gradeThresholds: cloneGradeThresholds(gradeThresholds)
   };
 }
@@ -107,6 +112,10 @@ function hasAdjustedGradeThresholds(data: WizardData): boolean {
 
     return adjustedThreshold !== undefined && adjustedThreshold.minPercent !== threshold.minPercent;
   });
+}
+
+function hasAdjustedTaskMaxPoints(data: WizardData): boolean {
+  return data.aufgaben.tasks.some((task, index) => data.justierung.adjustedMaxPointsByTask[index] !== task.maxPoints);
 }
 
 function hasWizardStepData(stepId: StepId, data: WizardData): boolean {
@@ -132,7 +141,7 @@ function hasWizardStepData(stepId: StepId, data: WizardData): boolean {
   }
 
   if (stepId === 'justierung') {
-    return data.justierung.droppedTaskIndexes.length > 0 || hasAdjustedGradeThresholds(data);
+    return data.justierung.droppedTaskIndexes.length > 0 || hasAdjustedTaskMaxPoints(data) || hasAdjustedGradeThresholds(data);
   }
 
   return false;
@@ -390,6 +399,18 @@ function readDroppedTaskIndexes(value: unknown): number[] | null {
   return indexes.sort((left, right) => left - right);
 }
 
+function readAdjustedMaxPointsByTask(value: unknown, tasks: ExamTask[]): (number | null)[] | null {
+  if (value === undefined) {
+    return createDefaultAdjustedMaxPointsByTask(tasks);
+  }
+
+  if (!Array.isArray(value) || !value.every(isNumberOrNull)) {
+    return null;
+  }
+
+  return tasks.map((task, index) => (value[index] === undefined ? task.maxPoints : value[index]));
+}
+
 function readAdjustedGradeThresholds(
   value: unknown,
   gradeThresholds: GradeThreshold[]
@@ -411,9 +432,13 @@ function readAdjustedGradeThresholds(
   }));
 }
 
-function readJustierungData(value: unknown, gradeThresholds: GradeThreshold[]): WizardData['justierung'] | null {
+function readJustierungData(
+  value: unknown,
+  gradeThresholds: GradeThreshold[],
+  tasks: ExamTask[]
+): WizardData['justierung'] | null {
   if (value === undefined) {
-    return createDefaultJustierungData(gradeThresholds);
+    return createDefaultJustierungData(gradeThresholds, tasks);
   }
 
   if (!isRecord(value)) {
@@ -421,20 +446,22 @@ function readJustierungData(value: unknown, gradeThresholds: GradeThreshold[]): 
   }
 
   if (isLegacyAdjustmentMethod(value.method)) {
-    return createDefaultJustierungData(gradeThresholds);
+    return createDefaultJustierungData(gradeThresholds, tasks);
   }
 
   const resultView = readAdjustmentResultView(value.resultView);
   const droppedTaskIndexes = readDroppedTaskIndexes(value.droppedTaskIndexes);
+  const adjustedMaxPointsByTask = readAdjustedMaxPointsByTask(value.adjustedMaxPointsByTask, tasks);
   const adjustedGradeThresholds = readAdjustedGradeThresholds(value.gradeThresholds, gradeThresholds);
 
-  if (!resultView || !droppedTaskIndexes || !adjustedGradeThresholds) {
+  if (!resultView || !droppedTaskIndexes || !adjustedMaxPointsByTask || !adjustedGradeThresholds) {
     return null;
   }
 
   return {
     resultView,
     droppedTaskIndexes,
+    adjustedMaxPointsByTask,
     gradeThresholds: adjustedGradeThresholds
   };
 }
@@ -459,7 +486,7 @@ function readWizardData(value: unknown): WizardData | null {
     return null;
   }
 
-  const justierung = readJustierungData(value.justierung, notenschema.gradeThresholds);
+  const justierung = readJustierungData(value.justierung, notenschema.gradeThresholds, aufgaben.tasks);
 
   if (!justierung) {
     return null;
@@ -544,6 +571,7 @@ function cloneWizardData(data: WizardData): WizardData {
     justierung: {
       ...data.justierung,
       droppedTaskIndexes: [...data.justierung.droppedTaskIndexes],
+      adjustedMaxPointsByTask: [...data.justierung.adjustedMaxPointsByTask],
       gradeThresholds: cloneGradeThresholds(data.justierung.gradeThresholds)
     }
   };
@@ -649,7 +677,7 @@ export function createWizardSessionExport(state: WizardState): WizardSessionExpo
 
   return {
     format: 'klasur-justierer-session',
-    version: 11,
+    version: 12,
     exportedAt: new Date().toISOString(),
     data: cloneWizardData(snapshot.data),
     touchedStepIds: [...snapshot.touchedStepIds],

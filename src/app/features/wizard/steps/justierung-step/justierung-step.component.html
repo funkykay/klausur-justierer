@@ -233,7 +233,7 @@
       <div>
         <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Justieroptionen</h3>
         <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">
-          Passe den Notenschlüssel an und streiche Aufgaben.
+          Passe den Notenschlüssel an, verändere Aufgabenpunkte und streiche Aufgaben.
         </p>
       </div>
 
@@ -281,26 +281,48 @@
         </section>
 
         <section>
-          <h4 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Aufgabe streichen</h4>
+          <h4 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Aufgaben justieren</h4>
 
-          <div class="mt-3 space-y-2">
+          <div class="mt-3 space-y-3">
             @for (task of tasks; track index; let index = $index) {
-              <label class="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-800 dark:bg-slate-950">
-                <input
-                  class="mt-1 h-4 w-4 accent-slate-950 dark:accent-slate-100"
-                  type="checkbox"
-                  [checked]="data.droppedTaskIndexes.includes(index)"
-                  (change)="toggleDroppedTask(index, checkboxValue($event))"
-                />
-                <span class="min-w-0">
-                  <span class="block text-sm font-medium text-slate-900 dark:text-slate-100">
-                    {{ displayText(task.name) }}
+              <section class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 dark:border-slate-800 dark:bg-slate-950">
+                <label class="flex cursor-pointer items-start gap-3">
+                  <input
+                    class="mt-1 h-4 w-4 accent-slate-950 dark:accent-slate-100"
+                    type="checkbox"
+                    [checked]="data.droppedTaskIndexes.includes(index)"
+                    (change)="toggleDroppedTask(index, checkboxValue($event))"
+                  />
+                  <span class="min-w-0">
+                    <span class="block text-sm font-medium text-slate-900 dark:text-slate-100">
+                      {{ displayText(task.name) }} streichen
+                    </span>
+                    <span class="block text-xs text-slate-500 dark:text-slate-400">
+                      Original: {{ formatOptionalNumber(task.maxPoints) }} Punkte
+                    </span>
                   </span>
-                  <span class="block text-xs text-slate-500 dark:text-slate-400">
-                    {{ formatOptionalNumber(task.maxPoints) }} Punkte
+                </label>
+
+                <label class="mt-3 block">
+                  <span class="field-label">Justierte Punkte</span>
+                  <span class="relative block">
+                    <input
+                      class="field-input pr-12"
+                      [class.field-input-error]="showErrors && errors['adjustedMaxPointsByTask.' + index]"
+                      type="number"
+                      min="0"
+                      step="0.5"
+                      inputmode="decimal"
+                      [disabled]="data.droppedTaskIndexes.includes(index)"
+                      [value]="adjustedMaxPointsByTask[index] ?? ''"
+                      (input)="updateAdjustedMaxPoints(index, numberValue($event))"
+                      (blur)="wizard.markCurrentTouched()"
+                    />
+                    <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-500 dark:text-slate-400">P.</span>
                   </span>
-                </span>
-              </label>
+                  <app-field-error [errors]="showErrors ? errors['adjustedMaxPointsByTask.' + index] : undefined" />
+                </label>
+              </section>
             }
           </div>
 

@@ -144,6 +144,12 @@ function validateJustierung(data: WizardData): ValidationResult {
     addError(errors, 'droppedTaskIndexes', 'Mindestens eine Aufgabe muss in der justierten Bewertung bleiben.');
   }
 
+  justierung.adjustedMaxPointsByTask.forEach((maxPoints, index) => {
+    if (!hasNonNegativeNumber(maxPoints)) {
+      addError(errors, `adjustedMaxPointsByTask.${index}`, 'Justierte Punkte müssen mindestens 0 sein.');
+    }
+  });
+
   justierung.gradeThresholds.forEach((threshold, index) => {
     if (!hasPercentNumber(threshold.minPercent)) {
       addError(errors, `gradeThresholds.${index}.minPercent`, 'Prozentwert muss zwischen 0 und 100 liegen.');

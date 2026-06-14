@@ -51,6 +51,15 @@ export class AufgabenStepComponent {
               }
             : task
         )
+      },
+      justierung: {
+        ...current.justierung,
+        adjustedMaxPointsByTask:
+          key === 'maxPoints'
+            ? current.justierung.adjustedMaxPointsByTask.map((maxPoints, taskIndex) =>
+                taskIndex === index && maxPoints === current.aufgaben.tasks[index]?.maxPoints ? (value as number | null) : maxPoints
+              )
+            : current.justierung.adjustedMaxPointsByTask
       }
     }));
   }
@@ -86,7 +95,8 @@ export class AufgabenStepComponent {
         ...current.justierung,
         droppedTaskIndexes: current.justierung.droppedTaskIndexes
           .filter((taskIndex) => taskIndex !== index)
-          .map((taskIndex) => (taskIndex > index ? taskIndex - 1 : taskIndex))
+          .map((taskIndex) => (taskIndex > index ? taskIndex - 1 : taskIndex)),
+        adjustedMaxPointsByTask: current.justierung.adjustedMaxPointsByTask.filter((_, taskIndex) => taskIndex !== index)
       }
     }));
   }

@@ -1,6 +1,7 @@
 import { computed, Injectable, signal } from '@angular/core';
 import type {
   ExamParticipant,
+  ExamTask,
   GradeThreshold,
   StepId,
   WizardData,
@@ -24,6 +25,12 @@ function cloneGradeThresholds(gradeThresholds: GradeThreshold[]): GradeThreshold
 }
 
 function createInitialData(): WizardData {
+  const tasks: ExamTask[] = [
+    {
+      name: 'Aufgabe 1',
+      maxPoints: 0
+    }
+  ];
   const gradeThresholds: GradeThreshold[] = [
     { grade: '1', minPercent: 92, failed: false },
     { grade: '2', minPercent: 81, failed: false },
@@ -39,12 +46,7 @@ function createInitialData(): WizardData {
       course: ''
     },
     aufgaben: {
-      tasks: [
-        {
-          name: 'Aufgabe 1',
-          maxPoints: 0
-        }
-      ]
+      tasks
     },
     notenschema: {
       gradeThresholds
@@ -60,6 +62,7 @@ function createInitialData(): WizardData {
     justierung: {
       resultView: 'table',
       droppedTaskIndexes: [],
+      adjustedMaxPointsByTask: tasks.map((task) => task.maxPoints),
       gradeThresholds: cloneGradeThresholds(gradeThresholds)
     }
   };
@@ -118,6 +121,10 @@ function normalizeDroppedTaskIndexes(droppedTaskIndexes: number[], taskCount: nu
     .sort((left, right) => left - right);
 }
 
+function normalizeAdjustedMaxPointsByTask(tasks: ExamTask[], adjustedMaxPointsByTask: (number | null)[]): (number | null)[] {
+  return tasks.map((task, index) => adjustedMaxPointsByTask[index] ?? task.maxPoints);
+}
+
 function normalizeAdjustedGradeThresholds(
   gradeThresholds: GradeThreshold[],
   adjustedGradeThresholds: GradeThreshold[]
@@ -151,6 +158,10 @@ function normalizeData(data: WizardData): WizardData {
     justierung: {
       ...data.justierung,
       droppedTaskIndexes: normalizeDroppedTaskIndexes(data.justierung.droppedTaskIndexes, taskCount),
+      adjustedMaxPointsByTask: normalizeAdjustedMaxPointsByTask(
+        data.aufgaben.tasks,
+        data.justierung.adjustedMaxPointsByTask
+      ),
       gradeThresholds: normalizeAdjustedGradeThresholds(
         data.notenschema.gradeThresholds,
         data.justierung.gradeThresholds
