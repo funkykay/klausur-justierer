@@ -75,6 +75,18 @@ export class AufgabenStepComponent {
       ...current,
       aufgaben: {
         tasks: current.aufgaben.tasks.filter((_, taskIndex) => taskIndex !== index)
+      },
+      teilnehmer: {
+        participants: current.teilnehmer.participants.map((participant) => ({
+          ...participant,
+          pointsByTask: participant.pointsByTask.filter((_, taskIndex) => taskIndex !== index)
+        }))
+      },
+      justierung: {
+        ...current.justierung,
+        droppedTaskIndexes: current.justierung.droppedTaskIndexes
+          .filter((taskIndex) => taskIndex !== index)
+          .map((taskIndex) => (taskIndex > index ? taskIndex - 1 : taskIndex))
       }
     }));
   }

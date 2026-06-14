@@ -71,6 +71,10 @@ export class NotenschemaStepComponent {
       ...current,
       notenschema: {
         gradeThresholds: current.notenschema.gradeThresholds.filter((_, thresholdIndex) => thresholdIndex !== index)
+      },
+      justierung: {
+        ...current.justierung,
+        gradeThresholds: current.justierung.gradeThresholds.filter((_, thresholdIndex) => thresholdIndex !== index)
       }
     }));
   }
