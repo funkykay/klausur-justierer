@@ -9,7 +9,7 @@ import type {
   WizardState
 } from './wizard.models';
 
-const STORAGE_KEY = 'klasur-justierer:sessions';
+const STORAGE_KEY = 'klausur-justierer:sessions';
 const STEP_IDS: StepId[] = ['basis', 'aufgaben', 'notenschema', 'teilnehmer', 'justierung'];
 
 type LegacyAdjustmentMethod = 'none' | 'bonus' | 'linear';
@@ -23,7 +23,7 @@ export type StoredWizardSession = {
 };
 
 export type WizardSessionExport = {
-  format: 'klasur-justierer-session';
+  format: 'klausur-justierer-session';
   version: 12;
   exportedAt: string;
   data: WizardData;
@@ -676,7 +676,7 @@ export function createWizardSessionExport(state: WizardState): WizardSessionExpo
   const snapshot = createWizardSessionSnapshot(state);
 
   return {
-    format: 'klasur-justierer-session',
+    format: 'klausur-justierer-session',
     version: 12,
     exportedAt: new Date().toISOString(),
     data: cloneWizardData(snapshot.data),
@@ -693,12 +693,12 @@ export function parseWizardSessionJson(content: string): WizardSessionSnapshot {
     return cloneWizardSessionSnapshot(snapshot);
   }
 
-  throw new Error('Die Datei enthält keine gültige Klasur-Justierer-Session.');
+  throw new Error('Die Datei enthält keine gültige Klausur-Justierer-Session.');
 }
 
 export function createWizardSessionFilename(course: string, topic: string): string {
   const normalizedName =
-    [course.trim(), topic.trim()].filter((value) => value.length > 0).join(' ') || 'klasur-session';
+    [course.trim(), topic.trim()].filter((value) => value.length > 0).join(' ') || 'klausur-session';
   const slug = normalizedName
     .normalize('NFKD')
     .replace(/[\u0300-\u036f]/g, '')
@@ -706,5 +706,5 @@ export function createWizardSessionFilename(course: string, topic: string): stri
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
 
-  return `${slug || 'klasur-session'}.json`;
+  return `${slug || 'klausur-session'}.json`;
 }

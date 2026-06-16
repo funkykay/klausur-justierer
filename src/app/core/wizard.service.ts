@@ -215,7 +215,7 @@ function markStepTouched(state: WizardState, index: number): WizardState {
 
 function createInitialState(): WizardState {
   return validateState({
-    title: 'Klasur-Justierer',
+    title: 'Klausur-Justierer',
     data: createInitialData(),
     steps: createSteps(),
     currentStepIndex: 0,

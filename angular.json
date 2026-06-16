@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "klasur-justierer": {
+    "klausur-justierer": {
       "projectType": "application",
       "schematics": {},
       "root": "",
@@ -13,7 +13,7 @@
         "build": {
           "builder": "@angular-devkit/build-angular:application",
           "options": {
-            "outputPath": "dist/klasur-justierer",
+            "outputPath": "dist/klausur-justierer",
             "index": "src/index.html",
             "browser": "src/main.ts",
             "polyfills": ["zone.js"],
@@ -57,10 +57,10 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "klasur-justierer:build:production"
+              "buildTarget": "klausur-justierer:build:production"
             },
             "development": {
-              "buildTarget": "klasur-justierer:build:development"
+              "buildTarget": "klausur-justierer:build:development"
             }
           },
           "defaultConfiguration": "development"

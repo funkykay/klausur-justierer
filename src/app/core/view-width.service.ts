@@ -2,7 +2,7 @@ import { computed, Injectable, signal } from '@angular/core';
 
 export type ViewWidthMode = 'narrow' | 'wide';
 
-const STORAGE_KEY = 'klasur-justierer:view-width';
+const STORAGE_KEY = 'klausur-justierer:view-width';
 
 function isViewWidthMode(value: unknown): value is ViewWidthMode {
   return value === 'narrow' || value === 'wide';

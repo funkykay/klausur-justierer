@@ -16,7 +16,7 @@ import { WizardService } from '../../../../core/wizard.service';
 
 type ModalType = 'welcome' | 'save' | 'load' | 'impressum' | 'datenschutz' | null;
 
-const WELCOME_DIALOG_STORAGE_KEY = 'klasur-justierer:welcome-dialog-on-visit';
+const WELCOME_DIALOG_STORAGE_KEY = 'klausur-justierer:welcome-dialog-on-visit';
 
 function readWelcomeDialogOnVisit(): boolean {
   if (typeof localStorage === 'undefined') {

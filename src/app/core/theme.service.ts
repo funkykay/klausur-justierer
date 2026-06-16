@@ -2,7 +2,7 @@ import { computed, Injectable, signal } from '@angular/core';
 
 export type ThemeMode = 'light' | 'dark';
 
-const STORAGE_KEY = 'klasur-justierer:theme';
+const STORAGE_KEY = 'klausur-justierer:theme';
 
 function isThemeMode(value: unknown): value is ThemeMode {
   return value === 'light' || value === 'dark';
