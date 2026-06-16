@@ -4,6 +4,10 @@
   z-index: 0;
 }
 
+.teilnehmer-editor-hidden {
+  display: none;
+}
+
 .teilnehmer-hot {
   isolation: isolate;
   position: relative;
@@ -29,28 +33,6 @@
   .teilnehmer-hot
   .handsontable.ht_clone_bottom_inline_start_corner {
   z-index: 2 !important;
-}
-
-:host ::ng-deep .teilnehmer-hot .handsontable td,
-:host ::ng-deep .teilnehmer-hot .handsontable th {
-  touch-action: manipulation;
-}
-
-@media (pointer: coarse) {
-  :host ::ng-deep .teilnehmer-hot .handsontable td,
-  :host ::ng-deep .teilnehmer-hot .handsontable th {
-    height: 2.75rem !important;
-    padding: 0.625rem 0.75rem !important;
-    font-size: 1rem;
-    line-height: 1.5;
-    vertical-align: middle;
-  }
-
-  :host ::ng-deep .teilnehmer-hot .handsontableInput {
-    min-height: 2.75rem !important;
-    padding: 0.625rem 0.75rem !important;
-    font-size: 1rem !important;
-  }
 }
 
 :host ::ng-deep .handsontable td.teilnehmer-grid-error {

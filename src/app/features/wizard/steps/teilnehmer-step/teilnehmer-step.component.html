@@ -10,9 +10,78 @@
     <button class="button-secondary" type="button" (click)="addParticipant()">Teilnehmer hinzufügen</button>
   </div>
 
-  <div class="teilnehmer-hot overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+  <section
+    class="space-y-6 sm:space-y-3"
+    [class.teilnehmer-editor-hidden]="inputEditorMode() !== 'mobile'"
+    [attr.aria-hidden]="inputEditorMode() !== 'mobile'"
+    [attr.inert]="inputEditorMode() !== 'mobile' ? '' : null"
+  >
+    @for (participant of participants; track participantIndex; let participantIndex = $index) {
+      <section class="mobile-flat-card">
+        <div class="flex items-start justify-between gap-3">
+          <h4 class="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            Teilnehmer {{ participantIndex + 1 }}
+          </h4>
+
+          <button
+            class="button-secondary px-3 py-1.5"
+            type="button"
+            [disabled]="participants.length === 1"
+            (click)="removeParticipant(participantIndex)"
+          >
+            Entfernen
+          </button>
+        </div>
+
+        <div class="mt-4 grid gap-4 md:grid-cols-2">
+          <label class="md:col-span-2">
+            <span class="field-label">Name</span>
+            <input
+              class="field-input"
+              [class.field-input-error]="showErrors && errors['participants.' + participantIndex + '.name']"
+              type="text"
+              [value]="participant.name"
+              (input)="updateParticipantName(participantIndex, textValue($event))"
+              (blur)="wizard.markCurrentTouched()"
+            />
+            <app-field-error [errors]="showErrors ? errors['participants.' + participantIndex + '.name'] : undefined" />
+          </label>
+
+          @for (task of tasks; track taskIndex; let taskIndex = $index) {
+            <label>
+              <span class="field-label">{{ task.name.trim() || 'Aufgabe ' + (taskIndex + 1) }}</span>
+              <span class="mb-1 block text-xs text-slate-500 dark:text-slate-400">
+                Maximal {{ task.maxPoints ?? 0 }} Punkte
+              </span>
+              <input
+                class="field-input"
+                [class.field-input-error]="showErrors && errors['participants.' + participantIndex + '.pointsByTask.' + taskIndex]"
+                type="number"
+                min="0"
+                step="0.5"
+                inputmode="decimal"
+                [value]="participant.pointsByTask[taskIndex] ?? ''"
+                (input)="updateParticipantPoints(participantIndex, taskIndex, numberValue($event))"
+                (blur)="wizard.markCurrentTouched()"
+              />
+              <app-field-error
+                [errors]="showErrors ? errors['participants.' + participantIndex + '.pointsByTask.' + taskIndex] : undefined"
+              />
+            </label>
+          }
+        </div>
+      </section>
+    }
+  </section>
+
+  <section
+    class="teilnehmer-hot overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950"
+    [class.teilnehmer-editor-hidden]="inputEditorMode() !== 'desktop'"
+    [attr.aria-hidden]="inputEditorMode() !== 'desktop'"
+    [attr.inert]="inputEditorMode() !== 'desktop' ? '' : null"
+  >
     <div #gridElement></div>
-  </div>
+  </section>
 
   @if (showErrors && validationMessages.length) {
     <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 dark:border-red-900 dark:bg-red-950">

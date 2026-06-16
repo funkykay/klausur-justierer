@@ -1,15 +1,19 @@
-import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, effect, inject } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, effect, inject, signal } from '@angular/core';
 import Handsontable from 'handsontable/base';
 import type { CellProperties } from 'handsontable/settings';
 import { registerAllModules } from 'handsontable/registry';
 import type { ExamParticipant, FieldErrors } from '../../../../core/wizard.models';
 import { WizardService } from '../../../../core/wizard.service';
+import { FieldErrorComponent } from '../../../../shared/field-error/field-error.component';
+
+type InputEditorMode = 'mobile' | 'desktop';
 
 registerAllModules();
 
 @Component({
   selector: 'app-teilnehmer-step',
   standalone: true,
+  imports: [FieldErrorComponent],
   templateUrl: './teilnehmer-step.component.html',
   styleUrl: './teilnehmer-step.component.css'
 })
@@ -17,17 +21,15 @@ export class TeilnehmerStepComponent implements AfterViewInit, OnDestroy {
   @ViewChild('gridElement') private gridElement: ElementRef<HTMLDivElement> | undefined;
 
   protected readonly wizard = inject(WizardService);
+  private readonly finePointerQuery = typeof window !== 'undefined' ? window.matchMedia('(any-pointer: fine)') : null;
+  private readonly coarsePointerQuery = typeof window !== 'undefined' ? window.matchMedia('(any-pointer: coarse)') : null;
+  protected readonly inputEditorMode = signal<InputEditorMode>(this.readInputEditorMode());
   private hotTable: Handsontable | null = null;
   private isSyncingGrid = false;
-  private mobileEditSelectionPending = false;
-  private mobileEditTimeout: number | undefined;
 
-  private readonly handleGridPointerDown = (event: PointerEvent): void => {
-    this.mobileEditSelectionPending = event.pointerType === 'touch' || event.pointerType === 'pen';
-  };
-
-  private readonly handleGridTouchStart = (): void => {
-    this.mobileEditSelectionPending = true;
+  private readonly handleInputModeChange = (): void => {
+    this.inputEditorMode.set(this.readInputEditorMode());
+    window.setTimeout(() => this.hotTable?.render());
   };
 
   private readonly gridEffect = effect(() => {
@@ -66,23 +68,17 @@ export class TeilnehmerStepComponent implements AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit(): void {
+    this.addInputModeListeners();
+
     if (!this.gridElement) {
       return;
     }
-
-    this.gridElement.nativeElement.addEventListener('pointerdown', this.handleGridPointerDown, {
-      passive: true
-    });
-    this.gridElement.nativeElement.addEventListener('touchstart', this.handleGridTouchStart, {
-      passive: true
-    });
 
     this.hotTable = new Handsontable(this.gridElement.nativeElement, {
       data: this.createGridData(),
       colHeaders: this.createColumnHeaders(),
       columns: this.createColumns(),
       rowHeaders: true,
-      rowHeights: this.hasCoarsePointer() ? 44 : undefined,
       height: 'auto',
       stretchH: 'all',
       autoWrapRow: true,
@@ -94,11 +90,6 @@ export class TeilnehmerStepComponent implements AfterViewInit, OnDestroy {
       themeName: 'ht-theme-main',
       licenseKey: 'non-commercial-and-evaluation',
       cells: (row, column) => this.createCellSettings(row, column),
-      afterSelectionEnd: (row, column, row2, column2) => {
-        if (row === row2 && column === column2) {
-          this.scheduleMobileCellEdit(row, column);
-        }
-      },
       afterChange: (changes, source) => {
         if (!changes || source === 'loadData') {
           return;
@@ -114,13 +105,7 @@ export class TeilnehmerStepComponent implements AfterViewInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.gridEffect.destroy();
-    this.clearMobileEditTimeout();
-
-    if (this.gridElement) {
-      this.gridElement.nativeElement.removeEventListener('pointerdown', this.handleGridPointerDown);
-      this.gridElement.nativeElement.removeEventListener('touchstart', this.handleGridTouchStart);
-    }
-
+    this.removeInputModeListeners();
     this.hotTable?.destroy();
     this.hotTable = null;
   }
@@ -252,6 +237,64 @@ export class TeilnehmerStepComponent implements AfterViewInit, OnDestroy {
     this.wizard.markCurrentTouched();
   }
 
+  removeParticipant(index: number): void {
+    if (this.participants.length <= 1) {
+      return;
+    }
+
+    this.wizard.updateData((current) => ({
+      ...current,
+      teilnehmer: {
+        participants: current.teilnehmer.participants.filter((_, participantIndex) => participantIndex !== index)
+      }
+    }));
+    this.wizard.markCurrentTouched();
+  }
+
+  updateParticipantName(index: number, name: string): void {
+    this.wizard.updateData((current) => ({
+      ...current,
+      teilnehmer: {
+        participants: current.teilnehmer.participants.map((participant, participantIndex) =>
+          participantIndex === index
+            ? {
+                ...participant,
+                name
+              }
+            : participant
+        )
+      }
+    }));
+  }
+
+  updateParticipantPoints(participantIndex: number, taskIndex: number, points: number | null): void {
+    this.wizard.updateData((current) => ({
+      ...current,
+      teilnehmer: {
+        participants: current.teilnehmer.participants.map((participant, currentParticipantIndex) =>
+          currentParticipantIndex === participantIndex
+            ? {
+                ...participant,
+                pointsByTask: current.aufgaben.tasks.map((_, currentTaskIndex) =>
+                  currentTaskIndex === taskIndex ? points : participant.pointsByTask[currentTaskIndex] ?? 0
+                )
+              }
+            : participant
+        )
+      }
+    }));
+  }
+
+  textValue(event: Event): string {
+    return (event.currentTarget as HTMLInputElement).value;
+  }
+
+  numberValue(event: Event): number | null {
+    const value = (event.currentTarget as HTMLInputElement).value;
+
+    return value === '' ? null : Number(value);
+  }
+
   hasCellError(row: number, column: number): boolean {
     if (!this.showErrors) {
       return false;
@@ -286,7 +329,6 @@ export class TeilnehmerStepComponent implements AfterViewInit, OnDestroy {
     this.hotTable.updateSettings({
       colHeaders: this.createColumnHeaders(),
       columns: this.createColumns(),
-      rowHeights: this.hasCoarsePointer() ? 44 : undefined,
       cells: (row, column) => this.createCellSettings(row, column)
     });
     this.hotTable.loadData(this.createGridData());
@@ -324,54 +366,20 @@ export class TeilnehmerStepComponent implements AfterViewInit, OnDestroy {
     );
   }
 
-  private hasCoarsePointer(): boolean {
-    return typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
+  private readInputEditorMode(): InputEditorMode {
+    const hasFinePointer = this.finePointerQuery?.matches ?? false;
+    const hasCoarsePointer = this.coarsePointerQuery?.matches ?? false;
+
+    return hasCoarsePointer && !hasFinePointer ? 'mobile' : 'desktop';
   }
 
-  private scheduleMobileCellEdit(row: number, column: number): void {
-    if (!this.hotTable || !this.mobileEditSelectionPending || row < 0 || column < 0) {
-      return;
-    }
-
-    this.mobileEditSelectionPending = false;
-    this.clearMobileEditTimeout();
-
-    this.mobileEditTimeout = window.setTimeout(() => {
-      if (!this.hotTable || this.isSyncingGrid) {
-        return;
-      }
-
-      const selection = this.hotTable.getSelectedLast();
-
-      if (!selection) {
-        return;
-      }
-
-      const [selectedRow, selectedColumn, selectedRow2, selectedColumn2] = selection;
-
-      if (
-        selectedRow !== row ||
-        selectedColumn !== column ||
-        selectedRow2 !== row ||
-        selectedColumn2 !== column
-      ) {
-        return;
-      }
-
-      const editor = this.hotTable.getActiveEditor();
-
-      if (editor && !editor.isOpened()) {
-        editor.beginEditing();
-      }
-    });
+  private addInputModeListeners(): void {
+    this.finePointerQuery?.addEventListener('change', this.handleInputModeChange);
+    this.coarsePointerQuery?.addEventListener('change', this.handleInputModeChange);
   }
 
-  private clearMobileEditTimeout(): void {
-    if (this.mobileEditTimeout === undefined) {
-      return;
-    }
-
-    window.clearTimeout(this.mobileEditTimeout);
-    this.mobileEditTimeout = undefined;
+  private removeInputModeListeners(): void {
+    this.finePointerQuery?.removeEventListener('change', this.handleInputModeChange);
+    this.coarsePointerQuery?.removeEventListener('change', this.handleInputModeChange);
   }
 }
