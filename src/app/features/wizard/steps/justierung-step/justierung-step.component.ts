@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnDestroy, ViewChild, effect, inject } from '@angular/core';
+import { Component, ElementRef, OnDestroy, ViewChild, computed, effect, inject } from '@angular/core';
 import {
   BarController,
   BarElement,
@@ -9,86 +9,12 @@ import {
   Tooltip,
   type ChartOptions
 } from 'chart.js';
+import { createAdjustmentEvaluation, type AdjustmentTrend, type FailureComparison, type GradeDistributionRow, type StatusReviewGroup } from '../../../../core/wizard-evaluation';
+import { createPrerequisiteIssues, type PrerequisiteIssue } from '../../../../core/wizard-error-labels';
 import { ThemeService } from '../../../../core/theme.service';
-import type {
-  AdjustmentResultView,
-  ExamParticipant,
-  FieldErrors,
-  GradeThreshold,
-  StepId,
-  WizardData
-} from '../../../../core/wizard.models';
+import type { AdjustmentResultView, WizardData } from '../../../../core/wizard.models';
 import { WizardService } from '../../../../core/wizard.service';
 import { FieldErrorComponent } from '../../../../shared/field-error/field-error.component';
-
-type AdjustmentTrend = 'better' | 'worse' | 'same';
-
-type GradeAssessment = {
-  grade: string;
-  failed: boolean;
-  rank: number;
-};
-
-type GradeDescriptor = {
-  grade: string;
-  failed: boolean;
-  rank: number;
-};
-
-type ParticipantReviewRow = {
-  name: string;
-  rawPoints: number;
-  rawPercent: number;
-  rawGrade: string;
-  rawFailed: boolean;
-  adjustedPoints: number;
-  adjustedPercent: number;
-  adjustedGrade: string;
-  adjustedFailed: boolean;
-  adjustedRank: number;
-  trend: AdjustmentTrend;
-};
-
-type GradeReviewGroup = {
-  key: string;
-  grade: string;
-  failed: boolean;
-  rank: number;
-  averageAdjustedPercent: number;
-  rows: ParticipantReviewRow[];
-};
-
-type StatusReviewGroup = {
-  key: 'passed' | 'failed';
-  title: string;
-  failed: boolean;
-  participantCount: number;
-  percent: number;
-  gradeGroups: GradeReviewGroup[];
-};
-
-type GradeDistributionRow = {
-  grade: string;
-  failed: boolean;
-  raw: number;
-  adjusted: number;
-};
-
-type FailureComparison = {
-  participantCount: number;
-  rawCount: number;
-  rawPercent: number;
-  adjustedCount: number;
-  adjustedPercent: number;
-  deltaCount: number;
-  deltaPercentPoints: number;
-};
-
-type PrerequisiteIssue = {
-  stepId: StepId;
-  title: string;
-  messages: string[];
-};
 
 Chart.register(BarController, BarElement, CategoryScale, LinearScale, Legend, Tooltip);
 
@@ -113,13 +39,10 @@ export class JustierungStepComponent implements OnDestroy {
 
   protected readonly wizard = inject(WizardService);
   protected readonly state = this.wizard.state;
+  protected readonly evaluation = computed(() => createAdjustmentEvaluation(this.state().data));
   private readonly theme = inject(ThemeService);
   private chartCanvas: ElementRef<HTMLCanvasElement> | undefined;
   private chart: Chart<'bar', number[], string> | null = null;
-  private readonly collator = new Intl.Collator('de-DE', {
-    numeric: true,
-    sensitivity: 'base'
-  });
   private readonly numberFormatter = new Intl.NumberFormat('de-DE', {
     maximumFractionDigits: 2
   });
@@ -128,15 +51,8 @@ export class JustierungStepComponent implements OnDestroy {
   });
 
   private readonly chartEffect = effect(() => {
-    const state = this.state();
-
     this.theme.theme();
-    JSON.stringify({
-      tasks: state.data.aufgaben.tasks,
-      participants: state.data.teilnehmer.participants,
-      gradeThresholds: state.data.notenschema.gradeThresholds,
-      justierung: state.data.justierung
-    });
+    JSON.stringify(this.evaluation().gradeDistributionRows);
 
     if (this.chart) {
       this.updateChart();
@@ -163,10 +79,6 @@ export class JustierungStepComponent implements OnDestroy {
     return this.data.adjustedMaxPointsByTask;
   }
 
-  protected get participants(): WizardData['teilnehmer']['participants'] {
-    return this.state().data.teilnehmer.participants;
-  }
-
   protected get errors() {
     return this.state().validation.errorsByStep.justierung;
   }
@@ -182,221 +94,27 @@ export class JustierungStepComponent implements OnDestroy {
   }
 
   protected get prerequisiteIssues(): PrerequisiteIssue[] {
-    return this.state().steps
-      .filter((step) => step.id !== 'justierung' && !step.validation.valid)
-      .map((step) => {
-        const messages = this.collectStepValidationMessages(step.id, step.validation.errors);
-
-        return {
-          stepId: step.id,
-          title: step.title,
-          messages: messages.length > 0 ? messages : ['Bitte Angaben prüfen.']
-        };
-      });
+    return createPrerequisiteIssues(this.state());
   }
 
   protected get resultTitle(): string {
     return 'Justiert';
   }
 
-  protected get rawTotalPoints(): number {
-    return this.tasks.reduce((sum, task) => sum + (task.maxPoints ?? 0), 0);
-  }
-
-  protected get adjustedTotalPoints(): number {
-    return this.tasks.reduce((sum, _, index) => {
-      if (this.data.droppedTaskIndexes.includes(index)) {
-        return sum;
-      }
-
-      return sum + this.adjustedMaxPointsForTask(index);
-    }, 0);
-  }
-
-  protected get changedAdjustedMaxPointsCount(): number {
-    return this.tasks.filter((task, index) => this.adjustedMaxPointsByTask[index] !== task.maxPoints).length;
-  }
-
-  protected get changedThresholdCount(): number {
-    return this.gradeThresholds.filter((threshold, index) => {
-      const adjustedThreshold = this.adjustedGradeThresholds[index];
-
-      return adjustedThreshold !== undefined && adjustedThreshold.minPercent !== threshold.minPercent;
-    }).length;
-  }
-
   protected get adjustmentSummary(): string {
-    const adjustments: string[] = [];
-
-    if (this.data.droppedTaskIndexes.length > 0) {
-      adjustments.push(`${this.data.droppedTaskIndexes.length} Aufgabe(n) gestrichen`);
-    }
-
-    if (this.changedAdjustedMaxPointsCount > 0) {
-      adjustments.push(`${this.changedAdjustedMaxPointsCount} Aufgabenpunktzahl(en) angepasst`);
-    }
-
-    if (this.changedThresholdCount > 0) {
-      adjustments.push(`${this.changedThresholdCount} Schwelle(n) angepasst`);
-    }
-
-    return adjustments.length > 0
-      ? adjustments.join(' · ')
-      : 'Noch keine rechnerische Justierung aktiv.';
+    return this.evaluation().adjustmentSummary;
   }
 
   protected get failureComparison(): FailureComparison {
-    const rows = this.reviewRows;
-    const participantCount = rows.length;
-    const rawCount = rows.filter((row) => row.rawFailed).length;
-    const adjustedCount = rows.filter((row) => row.adjustedFailed).length;
-    const rawPercent = this.calculatePercent(rawCount, participantCount);
-    const adjustedPercent = this.calculatePercent(adjustedCount, participantCount);
-
-    return {
-      participantCount,
-      rawCount,
-      rawPercent,
-      adjustedCount,
-      adjustedPercent,
-      deltaCount: adjustedCount - rawCount,
-      deltaPercentPoints: adjustedPercent - rawPercent
-    };
+    return this.evaluation().failureComparison;
   }
 
   protected get gradeDistributionRows(): GradeDistributionRow[] {
-    const rows = new Map<string, GradeDistributionRow>();
-
-    this.gradeDescriptors.forEach((descriptor) => {
-      rows.set(descriptor.grade, {
-        grade: descriptor.grade,
-        failed: descriptor.failed,
-        raw: 0,
-        adjusted: 0
-      });
-    });
-
-    this.reviewRows.forEach((row) => {
-      if (!rows.has(row.rawGrade)) {
-        rows.set(row.rawGrade, {
-          grade: row.rawGrade,
-          failed: row.rawFailed,
-          raw: 0,
-          adjusted: 0
-        });
-      }
-
-      if (!rows.has(row.adjustedGrade)) {
-        rows.set(row.adjustedGrade, {
-          grade: row.adjustedGrade,
-          failed: row.adjustedFailed,
-          raw: 0,
-          adjusted: 0
-        });
-      }
-
-      rows.get(row.rawGrade)!.raw += 1;
-      rows.get(row.adjustedGrade)!.adjusted += 1;
-    });
-
-    return [...rows.values()];
+    return this.evaluation().gradeDistributionRows;
   }
 
   protected get groupedStatusReviewRows(): StatusReviewGroup[] {
-    const participantCount = this.reviewRows.length;
-    const gradeGroups = this.groupedReviewRows;
-    const passedGradeGroups = gradeGroups.filter((group) => !group.failed);
-    const failedGradeGroups = gradeGroups.filter((group) => group.failed);
-
-    return [
-      this.createStatusReviewGroup('passed', 'Bestanden', false, participantCount, passedGradeGroups),
-      this.createStatusReviewGroup('failed', 'Durchgefallen', true, participantCount, failedGradeGroups)
-    ];
-  }
-
-  protected get groupedReviewRows(): GradeReviewGroup[] {
-    const groups = new Map<string, Omit<GradeReviewGroup, 'averageAdjustedPercent'>>();
-
-    this.reviewRows.forEach((row) => {
-      const key = `${row.adjustedRank}:${row.adjustedGrade}:${row.adjustedFailed}`;
-
-      if (!groups.has(key)) {
-        groups.set(key, {
-          key,
-          grade: row.adjustedGrade,
-          failed: row.adjustedFailed,
-          rank: row.adjustedRank,
-          rows: []
-        });
-      }
-
-      groups.get(key)!.rows.push(row);
-    });
-
-    return [...groups.values()]
-      .map((group) => {
-        const rows = [...group.rows].sort((left, right) => this.compareReviewRows(left, right));
-
-        return {
-          ...group,
-          rows,
-          averageAdjustedPercent: this.calculateAverageAdjustedPercent(rows)
-        };
-      })
-      .sort((left, right) => {
-        const rankComparison = this.compareRanks(left.rank, right.rank);
-
-        return rankComparison !== 0 ? rankComparison : this.collator.compare(left.grade, right.grade);
-      });
-  }
-
-  protected get reviewRows(): ParticipantReviewRow[] {
-    return this.participants.map((participant, index) => {
-      const rawPoints = this.calculateRawPoints(participant);
-      const rawPercent = this.calculatePercent(rawPoints, this.rawTotalPoints);
-      const rawAssessment = this.assessGradeForPercent(rawPercent, this.gradeThresholds);
-      const adjustedPoints = this.calculateAdjustedPoints(participant);
-      const adjustedPercent = this.calculatePercent(adjustedPoints, this.adjustedTotalPoints);
-      const adjustedAssessment = this.assessGradeForPercent(adjustedPercent, this.adjustedGradeThresholds);
-
-      return {
-        name: this.displayText(participant.name) === '—' ? `Teilnehmer ${index + 1}` : this.displayText(participant.name),
-        rawPoints,
-        rawPercent,
-        rawGrade: rawAssessment.grade,
-        rawFailed: rawAssessment.failed,
-        adjustedPoints,
-        adjustedPercent,
-        adjustedGrade: adjustedAssessment.grade,
-        adjustedFailed: adjustedAssessment.failed,
-        adjustedRank: adjustedAssessment.rank,
-        trend: this.trendForAssessments(rawAssessment, adjustedAssessment)
-      };
-    });
-  }
-
-  private get gradeDescriptors(): GradeDescriptor[] {
-    const descriptors: GradeDescriptor[] = [];
-
-    this.gradeThresholds.forEach((threshold) => {
-      const grade = this.displayText(threshold.grade);
-
-      if (descriptors.some((descriptor) => descriptor.grade === grade)) {
-        return;
-      }
-
-      descriptors.push({
-        grade,
-        failed: threshold.failed,
-        rank: descriptors.length
-      });
-    });
-
-    return descriptors;
-  }
-
-  private get gradeLabels(): string[] {
-    return this.gradeDescriptors.map((descriptor) => descriptor.grade);
+    return this.evaluation().groupedStatusReviewRows;
   }
 
   ngOnDestroy(): void {
@@ -408,10 +126,6 @@ export class JustierungStepComponent implements OnDestroy {
     return active
       ? 'inline-flex h-8 items-center justify-center rounded-md bg-slate-950 px-3 text-xs font-semibold text-white shadow-sm dark:bg-slate-100 dark:text-slate-950'
       : 'inline-flex h-8 items-center justify-center rounded-md px-3 text-xs font-semibold text-slate-600 transition hover:bg-white hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-slate-100';
-  }
-
-  textValue(event: Event): string {
-    return (event.currentTarget as HTMLInputElement | HTMLTextAreaElement).value;
   }
 
   numberValue(event: Event): number | null {
@@ -613,18 +327,6 @@ export class JustierungStepComponent implements OnDestroy {
     return '→';
   }
 
-  trendLabel(trend: AdjustmentTrend): string {
-    if (trend === 'better') {
-      return 'verbessert';
-    }
-
-    if (trend === 'worse') {
-      return 'verschlechtert';
-    }
-
-    return 'gleich';
-  }
-
   distributionComparisonClass(row: GradeDistributionRow): string {
     if (row.adjusted === row.raw) {
       return 'font-medium text-slate-500 dark:text-slate-400';
@@ -635,25 +337,6 @@ export class JustierungStepComponent implements OnDestroy {
     return improves
       ? 'font-semibold text-emerald-700 dark:text-emerald-300'
       : 'font-semibold text-red-700 dark:text-red-300';
-  }
-
-  private createStatusReviewGroup(
-    key: StatusReviewGroup['key'],
-    title: string,
-    failed: boolean,
-    totalParticipantCount: number,
-    gradeGroups: GradeReviewGroup[]
-  ): StatusReviewGroup {
-    const participantCount = gradeGroups.reduce((sum, group) => sum + group.rows.length, 0);
-
-    return {
-      key,
-      title,
-      failed,
-      participantCount,
-      percent: this.calculatePercent(participantCount, totalParticipantCount),
-      gradeGroups
-    };
   }
 
   private createChart(): void {
@@ -747,225 +430,5 @@ export class JustierungStepComponent implements OnDestroy {
         }
       }
     };
-  }
-
-  private calculateRawPoints(participant: ExamParticipant): number {
-    return this.tasks.reduce((sum, _, taskIndex) => sum + (participant.pointsByTask[taskIndex] ?? 0), 0);
-  }
-
-  private calculateAdjustedPoints(participant: ExamParticipant): number {
-    return this.tasks.reduce((sum, task, taskIndex) => {
-      if (this.data.droppedTaskIndexes.includes(taskIndex)) {
-        return sum;
-      }
-
-      const originalMaxPoints = task.maxPoints ?? 0;
-      const adjustedMaxPoints = this.adjustedMaxPointsForTask(taskIndex);
-      const participantPoints = participant.pointsByTask[taskIndex] ?? 0;
-
-      if (originalMaxPoints <= 0) {
-        return sum;
-      }
-
-      return sum + (participantPoints / originalMaxPoints) * adjustedMaxPoints;
-    }, 0);
-  }
-
-  private adjustedMaxPointsForTask(index: number): number {
-    const maxPoints = this.adjustedMaxPointsByTask[index];
-
-    return typeof maxPoints === 'number' && Number.isFinite(maxPoints) && maxPoints >= 0 ? maxPoints : 0;
-  }
-
-  private calculatePercent(points: number, totalPoints: number): number {
-    if (totalPoints <= 0) {
-      return 0;
-    }
-
-    return (points / totalPoints) * 100;
-  }
-
-  private calculateAverageAdjustedPercent(rows: ParticipantReviewRow[]): number {
-    if (rows.length === 0) {
-      return 0;
-    }
-
-    return rows.reduce((sum, row) => sum + row.adjustedPercent, 0) / rows.length;
-  }
-
-  private assessGradeForPercent(percent: number, gradeThresholds: GradeThreshold[]): GradeAssessment {
-    const threshold = gradeThresholds
-      .filter((item) => item.minPercent !== null)
-      .sort((left, right) => (right.minPercent ?? 0) - (left.minPercent ?? 0))
-      .find((item) => percent >= (item.minPercent ?? 0));
-
-    if (!threshold) {
-      return {
-        grade: '—',
-        failed: false,
-        rank: Number.POSITIVE_INFINITY
-      };
-    }
-
-    const grade = this.displayText(threshold.grade);
-    const rank = this.gradeLabels.indexOf(grade);
-
-    return {
-      grade,
-      failed: threshold.failed,
-      rank: rank >= 0 ? rank : Number.POSITIVE_INFINITY
-    };
-  }
-
-  private trendForAssessments(rawAssessment: GradeAssessment, adjustedAssessment: GradeAssessment): AdjustmentTrend {
-    if (rawAssessment.failed !== adjustedAssessment.failed) {
-      return adjustedAssessment.failed ? 'worse' : 'better';
-    }
-
-    if (
-      !Number.isFinite(rawAssessment.rank) ||
-      !Number.isFinite(adjustedAssessment.rank) ||
-      rawAssessment.rank === adjustedAssessment.rank
-    ) {
-      return 'same';
-    }
-
-    return adjustedAssessment.rank < rawAssessment.rank ? 'better' : 'worse';
-  }
-
-  private compareRanks(left: number, right: number): number {
-    if (Number.isFinite(left) && Number.isFinite(right)) {
-      return left - right;
-    }
-
-    if (Number.isFinite(left)) {
-      return -1;
-    }
-
-    if (Number.isFinite(right)) {
-      return 1;
-    }
-
-    return 0;
-  }
-
-  private compareReviewRows(left: ParticipantReviewRow, right: ParticipantReviewRow): number {
-    const rankComparison = this.compareRanks(left.adjustedRank, right.adjustedRank);
-
-    if (rankComparison !== 0) {
-      return rankComparison;
-    }
-
-    const adjustedPercentComparison = right.adjustedPercent - left.adjustedPercent;
-
-    if (adjustedPercentComparison !== 0) {
-      return adjustedPercentComparison;
-    }
-
-    const rawPercentComparison = right.rawPercent - left.rawPercent;
-
-    if (rawPercentComparison !== 0) {
-      return rawPercentComparison;
-    }
-
-    return this.collator.compare(left.name, right.name);
-  }
-
-  private collectStepValidationMessages(stepId: StepId, fieldErrors: FieldErrors): string[] {
-    return Object.entries(fieldErrors).flatMap(([field, messages]) =>
-      messages.map((message) => `${this.formatStepErrorField(stepId, field)}: ${message}`)
-    );
-  }
-
-  private formatStepErrorField(stepId: StepId, field: string): string {
-    if (stepId === 'basis') {
-      return this.formatBasisErrorField(field);
-    }
-
-    if (stepId === 'aufgaben') {
-      return this.formatAufgabenErrorField(field);
-    }
-
-    if (stepId === 'notenschema') {
-      return this.formatNotenschemaErrorField(field);
-    }
-
-    if (stepId === 'teilnehmer') {
-      return this.formatTeilnehmerErrorField(field);
-    }
-
-    return field;
-  }
-
-  private formatBasisErrorField(field: string): string {
-    if (field === 'course') {
-      return 'Kurs';
-    }
-
-    if (field === 'topic') {
-      return 'Thema';
-    }
-
-    return field;
-  }
-
-  private formatAufgabenErrorField(field: string): string {
-    if (field === 'tasks') {
-      return 'Aufgaben';
-    }
-
-    const match = /^tasks\.(\d+)\.(name|maxPoints)$/.exec(field);
-
-    if (!match) {
-      return field;
-    }
-
-    const taskIndex = Number(match[1]);
-    const taskName = this.tasks[taskIndex]?.name.trim() || `Aufgabe ${taskIndex + 1}`;
-    const fieldName = match[2] === 'name' ? 'Name' : 'Punkte';
-
-    return `${taskName}, ${fieldName}`;
-  }
-
-  private formatNotenschemaErrorField(field: string): string {
-    if (field === 'gradeThresholds') {
-      return 'Notenschlüssel';
-    }
-
-    const match = /^gradeThresholds\.(\d+)\.(grade|minPercent)$/.exec(field);
-
-    if (!match) {
-      return field;
-    }
-
-    const thresholdIndex = Number(match[1]);
-    const thresholdName = this.gradeThresholds[thresholdIndex]?.grade.trim() || `Note ${thresholdIndex + 1}`;
-    const fieldName = match[2] === 'grade' ? 'Bezeichnung' : 'Ab Prozent';
-
-    return `${thresholdName}, ${fieldName}`;
-  }
-
-  private formatTeilnehmerErrorField(field: string): string {
-    if (field === 'participants') {
-      return 'Teilnehmer';
-    }
-
-    const nameMatch = /^participants\.(\d+)\.name$/.exec(field);
-
-    if (nameMatch) {
-      return `Zeile ${Number(nameMatch[1]) + 1}, Teilnehmer`;
-    }
-
-    const pointsMatch = /^participants\.(\d+)\.pointsByTask\.(\d+)$/.exec(field);
-
-    if (!pointsMatch) {
-      return field;
-    }
-
-    const row = Number(pointsMatch[1]) + 1;
-    const taskIndex = Number(pointsMatch[2]);
-    const taskName = this.tasks[taskIndex]?.name.trim() || `Aufgabe ${taskIndex + 1}`;
-
-    return `Zeile ${row}, ${taskName}`;
   }
 }

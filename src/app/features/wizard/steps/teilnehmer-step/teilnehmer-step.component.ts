@@ -2,7 +2,8 @@ import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, effect, inj
 import Handsontable from 'handsontable/base';
 import type { CellProperties } from 'handsontable/settings';
 import { registerAllModules } from 'handsontable/registry';
-import type { ExamParticipant, FieldErrors } from '../../../../core/wizard.models';
+import { collectWizardValidationMessages } from '../../../../core/wizard-error-labels';
+import type { ExamParticipant } from '../../../../core/wizard.models';
 import { WizardService } from '../../../../core/wizard.service';
 import { FieldErrorComponent } from '../../../../shared/field-error/field-error.component';
 
@@ -64,7 +65,7 @@ export class TeilnehmerStepComponent implements AfterViewInit, OnDestroy {
   }
 
   protected get validationMessages(): string[] {
-    return this.collectValidationMessages(this.errors);
+    return collectWizardValidationMessages('teilnehmer', this.errors, this.wizard.state().data);
   }
 
   ngAfterViewInit(): void {
@@ -334,36 +335,6 @@ export class TeilnehmerStepComponent implements AfterViewInit, OnDestroy {
     this.hotTable.loadData(this.createGridData());
     this.hotTable.render();
     this.isSyncingGrid = false;
-  }
-
-  formatErrorField(field: string): string {
-    if (field === 'participants') {
-      return 'Teilnehmer';
-    }
-
-    const nameMatch = /^participants\.(\d+)\.name$/.exec(field);
-
-    if (nameMatch) {
-      return `Zeile ${Number(nameMatch[1]) + 1}, Teilnehmer`;
-    }
-
-    const pointsMatch = /^participants\.(\d+)\.pointsByTask\.(\d+)$/.exec(field);
-
-    if (pointsMatch) {
-      const row = Number(pointsMatch[1]) + 1;
-      const taskIndex = Number(pointsMatch[2]);
-      const taskName = this.tasks[taskIndex]?.name.trim() || `Aufgabe ${taskIndex + 1}`;
-
-      return `Zeile ${row}, ${taskName}`;
-    }
-
-    return field;
-  }
-
-  collectValidationMessages(fieldErrors: FieldErrors): string[] {
-    return Object.entries(fieldErrors).flatMap(([field, messages]) =>
-      messages.map((message) => `${this.formatErrorField(field)}: ${message}`)
-    );
   }
 
   private readInputEditorMode(): InputEditorMode {

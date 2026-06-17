@@ -1,192 +1,11 @@
 import { computed, Injectable, signal } from '@angular/core';
-import type {
-  ExamParticipant,
-  ExamTask,
-  GradeThreshold,
-  StepId,
-  WizardData,
-  WizardSessionSnapshot,
-  WizardState,
-  WizardStep,
-  WizardValidationState
-} from './wizard.models';
-import {
-  validateAufgaben,
-  validateBasis,
-  validateJustierung,
-  validateNotenschema,
-  validateTeilnehmer
-} from './wizard-validation';
-
-function cloneGradeThresholds(gradeThresholds: GradeThreshold[]): GradeThreshold[] {
-  return gradeThresholds.map((threshold) => ({
-    ...threshold
-  }));
-}
-
-function createInitialData(): WizardData {
-  const tasks: ExamTask[] = [
-    {
-      name: 'Aufgabe 1',
-      maxPoints: 0
-    }
-  ];
-  const gradeThresholds: GradeThreshold[] = [
-    { grade: '1', minPercent: 92, failed: false },
-    { grade: '2', minPercent: 81, failed: false },
-    { grade: '3', minPercent: 67, failed: false },
-    { grade: '4', minPercent: 50, failed: false },
-    { grade: '5', minPercent: 30, failed: true },
-    { grade: '6', minPercent: 0, failed: true }
-  ];
-
-  return {
-    basis: {
-      topic: '',
-      course: ''
-    },
-    aufgaben: {
-      tasks
-    },
-    notenschema: {
-      gradeThresholds
-    },
-    teilnehmer: {
-      participants: [
-        {
-          name: 'Teilnehmer 1',
-          pointsByTask: [0]
-        }
-      ]
-    },
-    justierung: {
-      resultView: 'table',
-      droppedTaskIndexes: [],
-      adjustedMaxPointsByTask: tasks.map((task) => task.maxPoints),
-      gradeThresholds: cloneGradeThresholds(gradeThresholds)
-    }
-  };
-}
-
-function createDefaultParticipant(index: number, taskCount: number): ExamParticipant {
-  return {
-    name: `Teilnehmer ${index + 1}`,
-    pointsByTask: Array.from({ length: taskCount }, () => 0)
-  };
-}
-
-function createSteps(): WizardStep[] {
-  return [
-    {
-      id: 'basis',
-      title: 'Basisdaten',
-      validate: validateBasis,
-      touched: false,
-      validation: { valid: true, errors: {} }
-    },
-    {
-      id: 'aufgaben',
-      title: 'Aufgaben',
-      validate: validateAufgaben,
-      touched: false,
-      validation: { valid: true, errors: {} }
-    },
-    {
-      id: 'notenschema',
-      title: 'Notenschema',
-      validate: validateNotenschema,
-      touched: false,
-      validation: { valid: true, errors: {} }
-    },
-    {
-      id: 'teilnehmer',
-      title: 'Teilnehmer',
-      validate: validateTeilnehmer,
-      touched: false,
-      validation: { valid: true, errors: {} }
-    },
-    {
-      id: 'justierung',
-      title: 'Justierung',
-      validate: validateJustierung,
-      touched: false,
-      validation: { valid: true, errors: {} }
-    }
-  ];
-}
-
-function normalizeDroppedTaskIndexes(droppedTaskIndexes: number[], taskCount: number): number[] {
-  return Array.from(new Set(droppedTaskIndexes))
-    .filter((index) => Number.isInteger(index) && index >= 0 && index < taskCount)
-    .sort((left, right) => left - right);
-}
-
-function normalizeAdjustedMaxPointsByTask(tasks: ExamTask[], adjustedMaxPointsByTask: (number | null)[]): (number | null)[] {
-  return tasks.map((task, index) => adjustedMaxPointsByTask[index] ?? task.maxPoints);
-}
-
-function normalizeAdjustedGradeThresholds(
-  gradeThresholds: GradeThreshold[],
-  adjustedGradeThresholds: GradeThreshold[]
-): GradeThreshold[] {
-  return gradeThresholds.map((threshold, index) => {
-    const adjustedThreshold = adjustedGradeThresholds[index];
-
-    return {
-      grade: threshold.grade,
-      minPercent: adjustedThreshold ? adjustedThreshold.minPercent : threshold.minPercent,
-      failed: threshold.failed
-    };
-  });
-}
-
-function normalizeData(data: WizardData): WizardData {
-  const taskCount = data.aufgaben.tasks.length;
-  const participants =
-    data.teilnehmer.participants.length > 0
-      ? data.teilnehmer.participants
-      : [createDefaultParticipant(0, taskCount)];
-
-  return {
-    ...data,
-    teilnehmer: {
-      participants: participants.map((participant) => ({
-        ...participant,
-        pointsByTask: Array.from({ length: taskCount }, (_, index) => participant.pointsByTask[index] ?? 0)
-      }))
-    },
-    justierung: {
-      ...data.justierung,
-      droppedTaskIndexes: normalizeDroppedTaskIndexes(data.justierung.droppedTaskIndexes, taskCount),
-      adjustedMaxPointsByTask: normalizeAdjustedMaxPointsByTask(
-        data.aufgaben.tasks,
-        data.justierung.adjustedMaxPointsByTask
-      ),
-      gradeThresholds: normalizeAdjustedGradeThresholds(
-        data.notenschema.gradeThresholds,
-        data.justierung.gradeThresholds
-      )
-    }
-  };
-}
-
-function buildValidation(steps: WizardStep[]): WizardValidationState {
-  const errorsByStep = steps.reduce(
-    (accumulator, step) => ({
-      ...accumulator,
-      [step.id]: step.validation.errors
-    }),
-    {} as Record<StepId, WizardValidationState['errorsByStep'][StepId]>
-  );
-
-  return {
-    valid: steps.every((step) => step.validation.valid),
-    errorsByStep
-  };
-}
+import type { WizardData, WizardSessionSnapshot, WizardState } from './wizard.models';
+import { normalizeWizardData } from './wizard-data-normalization';
+import { createInitialWizardData } from './wizard-defaults';
+import { buildWizardValidation, createInitialWizardValidation, createWizardSteps } from './wizard-steps';
 
 function validateState(state: WizardState): WizardState {
-  const data = normalizeData(state.data);
+  const data = normalizeWizardData(state.data);
   const currentStepId = state.steps[state.currentStepIndex]?.id;
   const touchesPrerequisites = currentStepId === 'justierung';
   const steps = state.steps.map((step) => ({
@@ -199,7 +18,7 @@ function validateState(state: WizardState): WizardState {
     ...state,
     data,
     steps,
-    validation: buildValidation(steps)
+    validation: buildWizardValidation(steps)
   };
 }
 
@@ -216,19 +35,10 @@ function markStepTouched(state: WizardState, index: number): WizardState {
 function createInitialState(): WizardState {
   return validateState({
     title: 'Klausur-Justierer',
-    data: createInitialData(),
-    steps: createSteps(),
+    data: createInitialWizardData(),
+    steps: createWizardSteps(),
     currentStepIndex: 0,
-    validation: {
-      valid: true,
-      errorsByStep: {
-        basis: {},
-        aufgaben: {},
-        notenschema: {},
-        teilnehmer: {},
-        justierung: {}
-      }
-    }
+    validation: createInitialWizardValidation()
   });
 }
 
