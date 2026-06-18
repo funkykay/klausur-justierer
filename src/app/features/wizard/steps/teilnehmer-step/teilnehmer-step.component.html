@@ -75,12 +75,24 @@
   </section>
 
   <section
-    class="teilnehmer-hot overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950"
+    class="teilnehmer-grid-panel overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950"
     [class.teilnehmer-editor-hidden]="inputEditorMode() !== 'desktop'"
     [attr.aria-hidden]="inputEditorMode() !== 'desktop'"
     [attr.inert]="inputEditorMode() !== 'desktop' ? '' : null"
   >
-    <div #gridElement></div>
+    <revo-grid
+      class="teilnehmer-revo-grid"
+      [source]="gridSource"
+      [columns]="gridColumns"
+      [theme]="gridTheme"
+      [rowHeaders]="true"
+      [range]="true"
+      [resize]="true"
+      [applyOnClose]="true"
+      (beforeedit)="normalizeGridEdit($event)"
+      (beforerangeedit)="normalizeGridRangeEdit($event)"
+      (afteredit)="handleGridEdit($event)"
+    ></revo-grid>
   </section>
 
   @if (showErrors && validationMessages.length) {

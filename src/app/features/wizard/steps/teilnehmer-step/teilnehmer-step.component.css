@@ -8,54 +8,74 @@
   display: none;
 }
 
-.teilnehmer-hot {
+.teilnehmer-grid-panel {
   isolation: isolate;
   position: relative;
   z-index: 0;
 }
 
-:host ::ng-deep .teilnehmer-hot .handsontable.ht_master {
-  z-index: 0 !important;
+.teilnehmer-revo-grid {
+  display: block;
+  height: min(60vh, 32rem);
+  min-height: 18rem;
+  width: 100%;
 }
 
-:host ::ng-deep .teilnehmer-hot .handsontable.ht_clone_top,
-:host ::ng-deep .teilnehmer-hot .handsontable.ht_clone_left,
-:host ::ng-deep .teilnehmer-hot .handsontable.ht_clone_inline_start,
-:host ::ng-deep .teilnehmer-hot .handsontable.ht_clone_bottom {
-  z-index: 1 !important;
-}
-
-:host ::ng-deep .teilnehmer-hot .handsontable.ht_clone_top_left_corner,
-:host ::ng-deep .teilnehmer-hot .handsontable.ht_clone_top_inline_start_corner,
-:host ::ng-deep .teilnehmer-hot .handsontable.ht_clone_bottom_left_corner,
-:host
-  ::ng-deep
-  .teilnehmer-hot
-  .handsontable.ht_clone_bottom_inline_start_corner {
-  z-index: 2 !important;
-}
-
-:host ::ng-deep .handsontable td.teilnehmer-grid-error {
+:host ::ng-deep .teilnehmer-revo-grid .teilnehmer-grid-error {
   background-color: #fef2f2 !important;
-  color: #991b1b;
+  color: #991b1b !important;
 }
 
-:host ::ng-deep .handsontable td.teilnehmer-grid-error.current,
-:host ::ng-deep .handsontable td.teilnehmer-grid-error.area,
-:host ::ng-deep .handsontable td.teilnehmer-grid-error.highlight {
-  background-color: #fee2e2 !important;
-}
-
-:host-context(.dark) ::ng-deep .handsontable td.teilnehmer-grid-error {
+:host-context(.dark) ::ng-deep .teilnehmer-revo-grid .teilnehmer-grid-error {
   background-color: #450a0a !important;
-  color: #fecaca;
+  color: #fecaca !important;
 }
 
-:host-context(.dark) ::ng-deep .handsontable td.teilnehmer-grid-error.current,
-:host-context(.dark) ::ng-deep .handsontable td.teilnehmer-grid-error.area,
-:host-context(.dark)
-  ::ng-deep
-  .handsontable
-  td.teilnehmer-grid-error.highlight {
-  background-color: #7f1d1d !important;
+:host ::ng-deep .teilnehmer-revo-grid .teilnehmer-grid-remove-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.375rem;
+  background: #ffffff;
+  padding: 0.25rem 0.5rem;
+  color: #334155;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1rem;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+}
+
+:host ::ng-deep .teilnehmer-revo-grid .teilnehmer-grid-remove-button:hover:not(:disabled) {
+  border-color: #94a3b8;
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+:host ::ng-deep .teilnehmer-revo-grid .teilnehmer-grid-remove-button:disabled {
+  cursor: not-allowed;
+  border-color: #e2e8f0;
+  background: #f1f5f9;
+  color: #94a3b8;
+}
+
+:host-context(.dark) ::ng-deep .teilnehmer-revo-grid .teilnehmer-grid-remove-button {
+  border-color: #334155;
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+:host-context(.dark) ::ng-deep .teilnehmer-revo-grid .teilnehmer-grid-remove-button:hover:not(:disabled) {
+  border-color: #475569;
+  background: #1e293b;
+  color: #f8fafc;
+}
+
+:host-context(.dark) ::ng-deep .teilnehmer-revo-grid .teilnehmer-grid-remove-button:disabled {
+  border-color: #1e293b;
+  background: #0f172a;
+  color: #475569;
 }
