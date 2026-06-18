@@ -1,52 +1,70 @@
-import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, effect, inject, signal } from '@angular/core';
-import Handsontable from 'handsontable/base';
-import type { CellProperties } from 'handsontable/settings';
-import { registerAllModules } from 'handsontable/registry';
+import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { RevoGrid, type ColumnRegular } from '@revolist/angular-datagrid';
+import { ThemeService } from '../../../../core/theme.service';
 import { collectWizardValidationMessages } from '../../../../core/wizard-error-labels';
 import type { ExamParticipant } from '../../../../core/wizard.models';
 import { WizardService } from '../../../../core/wizard.service';
 import { FieldErrorComponent } from '../../../../shared/field-error/field-error.component';
 
 type InputEditorMode = 'mobile' | 'desktop';
+type GridTheme = 'material' | 'darkMaterial';
+type TeilnehmerGridValue = string | number | null;
+type TeilnehmerGridRow = {
+  name: string;
+  actions: string;
+  [key: string]: TeilnehmerGridValue;
+};
+type GridRangeData = Record<string, Record<string, unknown>>;
+type GridEditDetail = {
+  prop?: string | number;
+  rowIndex?: number;
+  val?: unknown;
+  data?: unknown;
+};
+type GridEditEvent = CustomEvent<GridEditDetail>;
 
-registerAllModules();
+const ACTIONS_COLUMN_PROP = 'actions';
+const TASK_PROP_PREFIX = 'task_';
+
+function createTaskProp(index: number): string {
+  return `${TASK_PROP_PREFIX}${index}`;
+}
+
+function readTaskIndexFromProp(prop: string | number): number | null {
+  if (typeof prop !== 'string' || !prop.startsWith(TASK_PROP_PREFIX)) {
+    return null;
+  }
+
+  const index = Number(prop.slice(TASK_PROP_PREFIX.length));
+
+  return Number.isInteger(index) && index >= 0 ? index : null;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function isGridRangeData(value: unknown): value is GridRangeData {
+  return isRecord(value) && Object.values(value).every(isRecord);
+}
 
 @Component({
   selector: 'app-teilnehmer-step',
   standalone: true,
-  imports: [FieldErrorComponent],
+  imports: [FieldErrorComponent, RevoGrid],
   templateUrl: './teilnehmer-step.component.html',
   styleUrl: './teilnehmer-step.component.css'
 })
-export class TeilnehmerStepComponent implements AfterViewInit, OnDestroy {
-  @ViewChild('gridElement') private gridElement: ElementRef<HTMLDivElement> | undefined;
-
+export class TeilnehmerStepComponent implements OnInit, OnDestroy {
   protected readonly wizard = inject(WizardService);
+  private readonly theme = inject(ThemeService);
   private readonly finePointerQuery = typeof window !== 'undefined' ? window.matchMedia('(any-pointer: fine)') : null;
   private readonly coarsePointerQuery = typeof window !== 'undefined' ? window.matchMedia('(any-pointer: coarse)') : null;
   protected readonly inputEditorMode = signal<InputEditorMode>(this.readInputEditorMode());
-  private hotTable: Handsontable | null = null;
-  private isSyncingGrid = false;
 
   private readonly handleInputModeChange = (): void => {
     this.inputEditorMode.set(this.readInputEditorMode());
-    window.setTimeout(() => this.hotTable?.render());
   };
-
-  private readonly gridEffect = effect(() => {
-    const state = this.wizard.state();
-
-    JSON.stringify({
-      tasks: state.data.aufgaben.tasks,
-      participants: state.data.teilnehmer.participants,
-      errors: state.validation.errorsByStep.teilnehmer,
-      showErrors: Boolean(state.steps.find((item) => item.id === 'teilnehmer')?.touched)
-    });
-
-    if (this.hotTable) {
-      this.updateGrid();
-    }
-  });
 
   protected get tasks() {
     return this.wizard.state().data.aufgaben.tasks;
@@ -68,47 +86,79 @@ export class TeilnehmerStepComponent implements AfterViewInit, OnDestroy {
     return collectWizardValidationMessages('teilnehmer', this.errors, this.wizard.state().data);
   }
 
-  ngAfterViewInit(): void {
-    this.addInputModeListeners();
+  protected get gridTheme(): GridTheme {
+    return this.theme.isDark() ? 'darkMaterial' : 'material';
+  }
 
-    if (!this.gridElement) {
-      return;
-    }
+  protected get gridSource(): TeilnehmerGridRow[] {
+    return this.participants.map((participant) => {
+      const row: TeilnehmerGridRow = {
+        name: participant.name,
+        actions: ''
+      };
 
-    this.hotTable = new Handsontable(this.gridElement.nativeElement, {
-      data: this.createGridData(),
-      colHeaders: this.createColumnHeaders(),
-      columns: this.createColumns(),
-      rowHeaders: true,
-      height: 'auto',
-      stretchH: 'all',
-      autoWrapRow: true,
-      autoWrapCol: true,
-      enterBeginsEditing: true,
-      contextMenu: ['remove_row', 'undo', 'redo'],
-      manualColumnResize: true,
-      manualRowResize: true,
-      themeName: 'ht-theme-main',
-      licenseKey: 'non-commercial-and-evaluation',
-      cells: (row, column) => this.createCellSettings(row, column),
-      afterChange: (changes, source) => {
-        if (!changes || source === 'loadData') {
-          return;
-        }
+      this.tasks.forEach((_, taskIndex) => {
+        row[createTaskProp(taskIndex)] = participant.pointsByTask[taskIndex] ?? null;
+      });
 
-        this.syncFromGrid();
-      },
-      afterRemoveRow: () => {
-        this.syncFromGrid();
-      }
+      return row;
     });
   }
 
+  protected get gridColumns(): ColumnRegular[] {
+    const columns: ColumnRegular[] = [
+      {
+        prop: 'name',
+        name: 'Teilnehmer',
+        size: 220,
+        autoSize: true,
+        cellProperties: (props) => this.createCellProperties(props.rowIndex, 0)
+      },
+      ...this.tasks.map((task, taskIndex): ColumnRegular => {
+        const name = task.name.trim() || `Aufgabe ${taskIndex + 1}`;
+        const maxPoints = task.maxPoints ?? 0;
+
+        return {
+          prop: createTaskProp(taskIndex),
+          name: `${name} (${maxPoints} P.)`,
+          size: 140,
+          autoSize: true,
+          cellProperties: (props) => this.createCellProperties(props.rowIndex, taskIndex + 1)
+        };
+      }),
+      {
+        prop: ACTIONS_COLUMN_PROP,
+        name: 'Aktion',
+        size: 112,
+        readonly: true,
+        pin: 'colPinEnd',
+        cellTemplate: (createElement, props) =>
+          createElement(
+            'button',
+            {
+              class: 'teilnehmer-grid-remove-button',
+              disabled: this.participants.length === 1,
+              type: 'button',
+              onClick: (event: MouseEvent) => {
+                event.preventDefault();
+                event.stopPropagation();
+                this.removeParticipant(props.rowIndex);
+              }
+            },
+            'Entfernen'
+          )
+      }
+    ];
+
+    return columns;
+  }
+
+  ngOnInit(): void {
+    this.addInputModeListeners();
+  }
+
   ngOnDestroy(): void {
-    this.gridEffect.destroy();
     this.removeInputModeListeners();
-    this.hotTable?.destroy();
-    this.hotTable = null;
   }
 
   createParticipant(index = this.participants.length): ExamParticipant {
@@ -116,110 +166,6 @@ export class TeilnehmerStepComponent implements AfterViewInit, OnDestroy {
       name: `Teilnehmer ${index + 1}`,
       pointsByTask: this.tasks.map(() => 0)
     };
-  }
-
-  createGridData(): (string | number | null)[][] {
-    const rows = this.participants.map((participant) => [
-      participant.name,
-      ...this.tasks.map((_, taskIndex) => participant.pointsByTask[taskIndex] ?? 0)
-    ]);
-
-    if (rows.length === 0) {
-      const participant = this.createParticipant(0);
-
-      return [[participant.name, ...participant.pointsByTask]];
-    }
-
-    return rows;
-  }
-
-  createColumnHeaders(): string[] {
-    return [
-      'Teilnehmer',
-      ...this.tasks.map((task, index) => {
-        const name = task.name.trim() || `Aufgabe ${index + 1}`;
-        const maxPoints = task.maxPoints ?? 0;
-
-        return `${name} (${maxPoints} P.)`;
-      })
-    ];
-  }
-
-  createColumns(): Handsontable.ColumnSettings[] {
-    return [
-      {
-        type: 'text'
-      },
-      ...this.tasks.map(() => ({
-        type: 'numeric',
-        allowInvalid: true
-      }))
-    ];
-  }
-
-  normalizeText(value: unknown): string {
-    if (typeof value === 'string') {
-      return value;
-    }
-
-    if (value === null || value === undefined) {
-      return '';
-    }
-
-    return String(value);
-  }
-
-  normalizePoints(value: unknown): number | null {
-    if (value === null || value === undefined || value === '') {
-      return null;
-    }
-
-    if (typeof value === 'number') {
-      return Number.isFinite(value) ? value : null;
-    }
-
-    const normalized = String(value).trim().replace(',', '.');
-
-    if (!normalized) {
-      return null;
-    }
-
-    const parsed = Number(normalized);
-
-    return Number.isFinite(parsed) ? parsed : null;
-  }
-
-  readGridParticipants(): ExamParticipant[] {
-    if (!this.hotTable) {
-      return [];
-    }
-
-    return this.hotTable
-      .getData()
-      .map((row) => ({
-        name: this.normalizeText(row[0]).trim(),
-        pointsByTask: this.tasks.map((_, taskIndex) => this.normalizePoints(row[taskIndex + 1]))
-      }))
-      .filter(
-        (participant) =>
-          participant.name.length > 0 || participant.pointsByTask.some((points) => points !== null)
-      );
-  }
-
-  syncFromGrid(): void {
-    if (!this.hotTable || this.isSyncingGrid) {
-      return;
-    }
-
-    const nextParticipants = this.readGridParticipants();
-
-    this.wizard.updateData((current) => ({
-      ...current,
-      teilnehmer: {
-        participants: nextParticipants.length > 0 ? nextParticipants : [this.createParticipant(0)]
-      }
-    }));
-    this.wizard.markCurrentTouched();
   }
 
   addParticipant(): void {
@@ -296,6 +242,63 @@ export class TeilnehmerStepComponent implements AfterViewInit, OnDestroy {
     return value === '' ? null : Number(value);
   }
 
+  normalizeGridEdit(event: Event): void {
+    const detail = (event as GridEditEvent).detail;
+
+    if (!detail || detail.prop === undefined) {
+      return;
+    }
+
+    const normalized = this.normalizeGridValue(detail.prop, detail.val);
+
+    if (normalized !== undefined) {
+      detail.val = normalized;
+    }
+  }
+
+  normalizeGridRangeEdit(event: Event): void {
+    const detail = (event as GridEditEvent).detail;
+
+    if (!detail || !isGridRangeData(detail.data)) {
+      return;
+    }
+
+    Object.values(detail.data).forEach((row) => {
+      Object.entries(row).forEach(([prop, value]) => {
+        const normalized = this.normalizeGridValue(prop, value);
+
+        if (normalized !== undefined) {
+          row[prop] = normalized;
+        }
+      });
+    });
+  }
+
+  handleGridEdit(event: Event): void {
+    const detail = (event as GridEditEvent).detail;
+
+    if (!detail) {
+      return;
+    }
+
+    if (isGridRangeData(detail.data)) {
+      this.updateParticipantsFromGridRows(detail.data);
+      return;
+    }
+
+    if (detail.prop === undefined || typeof detail.rowIndex !== 'number') {
+      return;
+    }
+
+    const normalized = this.normalizeGridValue(detail.prop, detail.val);
+
+    if (normalized === undefined) {
+      return;
+    }
+
+    this.updateParticipantFromGridCell(detail.rowIndex, detail.prop, normalized);
+  }
+
   hasCellError(row: number, column: number): boolean {
     if (!this.showErrors) {
       return false;
@@ -315,26 +318,125 @@ export class TeilnehmerStepComponent implements AfterViewInit, OnDestroy {
     return Boolean(this.errors[field]?.length);
   }
 
-  createCellSettings(row: number, column: number): Partial<CellProperties> {
-    return {
-      className: this.hasCellError(row, column) ? 'teilnehmer-grid-error' : ''
-    };
+  createCellProperties(row: number, column: number): { class: string } | undefined {
+    return this.hasCellError(row, column) ? { class: 'teilnehmer-grid-error' } : undefined;
   }
 
-  updateGrid(): void {
-    if (!this.hotTable) {
+  normalizeText(value: unknown): string {
+    if (typeof value === 'string') {
+      return value;
+    }
+
+    if (value === null || value === undefined) {
+      return '';
+    }
+
+    return String(value);
+  }
+
+  normalizePoints(value: unknown): number | null {
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+
+    if (typeof value === 'number') {
+      return Number.isFinite(value) ? value : null;
+    }
+
+    const normalized = String(value).trim().replace(',', '.');
+
+    if (!normalized) {
+      return null;
+    }
+
+    const parsed = Number(normalized);
+
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  private updateParticipantFromGridCell(
+    rowIndex: number,
+    prop: string | number,
+    value: TeilnehmerGridValue
+  ): void {
+    const taskIndex = readTaskIndexFromProp(prop);
+
+    if (prop !== 'name' && taskIndex === null) {
       return;
     }
 
-    this.isSyncingGrid = true;
-    this.hotTable.updateSettings({
-      colHeaders: this.createColumnHeaders(),
-      columns: this.createColumns(),
-      cells: (row, column) => this.createCellSettings(row, column)
+    this.wizard.updateData((current) => {
+      if (!current.teilnehmer.participants[rowIndex]) {
+        return current;
+      }
+
+      return {
+        ...current,
+        teilnehmer: {
+          participants: current.teilnehmer.participants.map((participant, participantIndex) => {
+            if (participantIndex !== rowIndex) {
+              return participant;
+            }
+
+            if (prop === 'name') {
+              return {
+                ...participant,
+                name: this.normalizeText(value).trim()
+              };
+            }
+
+            return {
+              ...participant,
+              pointsByTask: current.aufgaben.tasks.map((_, currentTaskIndex) =>
+                currentTaskIndex === taskIndex ? this.normalizePoints(value) : participant.pointsByTask[currentTaskIndex] ?? 0
+              )
+            };
+          })
+        }
+      };
     });
-    this.hotTable.loadData(this.createGridData());
-    this.hotTable.render();
-    this.isSyncingGrid = false;
+    this.wizard.markCurrentTouched();
+  }
+
+  private updateParticipantsFromGridRows(rowsByIndex: GridRangeData): void {
+    this.wizard.updateData((current) => ({
+      ...current,
+      teilnehmer: {
+        participants: current.teilnehmer.participants.map((participant, participantIndex) => {
+          const row = rowsByIndex[participantIndex];
+
+          return row ? this.applyGridRowToParticipant(participant, row, current.aufgaben.tasks.length) : participant;
+        })
+      }
+    }));
+    this.wizard.markCurrentTouched();
+  }
+
+  private applyGridRowToParticipant(
+    participant: ExamParticipant,
+    row: Record<string, unknown>,
+    taskCount: number
+  ): ExamParticipant {
+    return {
+      name: row.name === undefined ? participant.name : this.normalizeText(row.name).trim(),
+      pointsByTask: Array.from({ length: taskCount }, (_, taskIndex) => {
+        const prop = createTaskProp(taskIndex);
+
+        return row[prop] === undefined ? participant.pointsByTask[taskIndex] ?? 0 : this.normalizePoints(row[prop]);
+      })
+    };
+  }
+
+  private normalizeGridValue(prop: string | number, value: unknown): TeilnehmerGridValue | undefined {
+    if (prop === 'name') {
+      return this.normalizeText(value);
+    }
+
+    if (readTaskIndexFromProp(prop) !== null) {
+      return this.normalizePoints(value);
+    }
+
+    return undefined;
   }
 
   private readInputEditorMode(): InputEditorMode {

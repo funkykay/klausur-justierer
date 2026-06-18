@@ -1,6 +1,4 @@
 @import "tailwindcss";
-@import "handsontable/styles/handsontable.min.css";
-@import "handsontable/styles/ht-theme-main.min.css";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -122,43 +120,4 @@
       @apply border-slate-800 bg-slate-900;
     }
   }
-}
-
-.teilnehmer-hot .handsontableInput {
-  font-size: 16px !important;
-}
-
-.dark .teilnehmer-hot .handsontable,
-.dark .teilnehmer-hot .handsontable .wtHolder,
-.dark .teilnehmer-hot .handsontable .wtHider,
-.dark .teilnehmer-hot .handsontable .wtSpreader {
-  background-color: #020617;
-  color: #e2e8f0;
-}
-
-.dark .teilnehmer-hot .handsontable td {
-  border-color: #334155;
-  background-color: #0f172a;
-  color: #e2e8f0;
-}
-
-.dark .teilnehmer-hot .handsontable th {
-  border-color: #334155;
-  background-color: #1e293b;
-  color: #e2e8f0;
-}
-
-.dark .teilnehmer-hot .handsontable td.current,
-.dark .teilnehmer-hot .handsontable td.area,
-.dark .teilnehmer-hot .handsontable td.highlight {
-  background-color: #334155 !important;
-}
-
-.dark .teilnehmer-hot .handsontable .wtBorder {
-  background-color: #e2e8f0 !important;
-}
-
-.dark .teilnehmer-hot .handsontableInput {
-  background-color: #020617;
-  color: #e2e8f0;
 }
